@@ -41,33 +41,33 @@ total project each milestone is worth.
 **Remember: there are no late days for project milestones. If work is
 late, you will receive no credit.**
 
-  - [Design notebook](#notebook) (10%) Every Sunday @ 11:59pm Pacific,
+  - [Design notebook](#user-content-design-notebook) (10%) Every Sunday @ 11:59pm Pacific,
       starting Sunday, November 1.
-  - [Critiques](#critiques) (10%) Every Tuesday @ 11:59pm Pacific,
+  - [Critiques](#user-content-critiques) (10%) Every Tuesday @ 11:59pm Pacific,
       starting Tuesday, November 3.
 
 
-  - [Project repositories](#repo) Sunday, November 1 @ 11:59pm Pacific.
-  - [Project description and plan](#description) (5%) Sunday, November 1 @ 11:59pm Pacific.
+  - [Project repositories](#user-content-repositories) Sunday, November 1 @ 11:59pm Pacific.
+  - [Project description and plan](#user-content-project-description-and-plan) (5%) Sunday, November 1 @ 11:59pm Pacific.
 
 
-  - [Language design and implementation overview](#lang-overview) (10%) Sunday, 
+  - [Language design and implementation overview](#user-content-language-design-and-implementation-overview) (10%) Sunday, 
     November 8 @ 11:59pm Pacific.
 
 
-  - [Prototype](#prototype) (10%) Sunday, November 15 @ 11:59pm Pacific.
+  - [Prototype](#user-content-prototype) (10%) Sunday, November 15 @ 11:59pm Pacific.
 
 
-  - [Preliminary evaluation](#evaluation) (10%) Sunday, November 22 @ 11:59pm Pacific.
+  - [Preliminary evaluation](#user-content-preliminary-evaluation) (10%) Sunday, November 22 @ 11:59pm Pacific.
 
 
-  - [Demo / Presentation](#talk) (10%) Monday, December 7 / Wednesday, 
+  - [Demo / Presentation](#user-content-demo--presentation) (10%) Monday, December 7 / Wednesday, 
     December 9 @ 1:15pm Pacific.
 
 
-  - [Final product](#product) (15%) Friday, December 11 @ 11:59pm
+  - [Final product](#user-content-final-product) (15%) Friday, December 11 @ 11:59pm
     Pacific.
-  - [Final write-up](#write-up) (15%) Friday, December 11 @ 11:59pm
+  - [Final write-up](#user-content-final-write-up) (15%) Friday, December 11 @ 11:59pm
     Pacific.
 
 
