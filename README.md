@@ -71,7 +71,7 @@ late, you will receive no credit.**
     Pacific.
 
 
-## Design notebook {#notebook}
+## Design notebook 
 *Every Sunday @ 11:59pm Pacific, starting Sunday, November 1. (10%)*
 
 Everyone will keep an _individual_ design notebook. This notebook documents
@@ -105,7 +105,7 @@ the repository. A thoughtful, clear entry each week is good for your project,
 good for your grade, and provides excellent material for your critique partners
 and your final deliverables.
 
-## Critiques {#critiques}
+## Critiques 
 *Every Tuesday @ 11:59pm Pacific, starting Tuesday, November 3. (10%)*
 
 ### Your role as critic
@@ -139,7 +139,7 @@ reflection should answer questions such as:
    - How will you incorporate the feedback into your work? Will you change
      something about the design, implementation, or evaluation as a result?
 
-## Project repositories {#repo}
+## Project repositories 
 *Create these by Sunday, November 1 @ 11:59pm Pacific.*
 
 Your project will be spread out over three repositories: "project", "notebook",
@@ -196,7 +196,7 @@ tied to the CS 111's assignments.
    1. Add a link to your repository on the 
    [CS 111 wiki page for projects][CS111-projects]
 
-## Project description and plan {#description}
+## Project description and plan 
 *Sunday, November 1 @ 11:59pm Pacific. (10%)*
 
 This document is for you to collect and clearly convey the goals of your project
@@ -259,7 +259,7 @@ Teamwork plan
     documentation.*
 
 
-## Language design and implementation overview {#lang-overview}
+## Language design and implementation overview 
 
 *Sunday, November 8 @ 11:59pm Pacific. (10%)*
 
@@ -310,7 +310,7 @@ portion of code written by this point. We'll do critiques / code review of the
 prototypes in class this coming week.
 
 
-## Preliminary evaluation {#evaluation} 
+## Preliminary evaluation 
 
 *Sunday, November 22 @ 11:59pm Pacific. (10%)*
 
@@ -333,7 +333,7 @@ the file `documents/evaluation.md`. Be sure to address the following issues:
 -   If you worked as a pair, describe how you have divided your labor and
     whether that division has worked well.
 
-## Demo / Presentation {#talk}
+## Demo / Presentation 
 
 *Monday, December 7 / Wednesday & December 9 @ 1:15pm Pacific. (10%)*
 
@@ -362,7 +362,7 @@ In particular, we want to see:
 can "fake" the demo to show us your vision, if your vision is too ambitious for
 the project.*
 
-## Final product {#product}
+## Final product 
 *Friday, December 11 @ 11:59pm Pacific. (15%)*
 
 Commit all the materials for your language, along with a few sample programs. Be
@@ -372,7 +372,7 @@ your DSL. Your code should follow good practices. In particular, it should be
 well-architected (i.e., modular), well-tested, and well-documented.
 
 
-## Final write-up {#write-up}
+## Final write-up 
 *Friday, December 11 @ 11:59pm Pacific. (15%)*
 
 Your write-up should describe your domain, your language, and your
