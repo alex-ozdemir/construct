@@ -35,8 +35,8 @@ class ConstructInterpreter {
         val locus1 = lookupLocus(id1)
         val locus2 = lookupLocus(id2)
         val inters = locus1 intersect locus2
-        require(inters.size == inter_ids.size)
-        points ++= inter_ids zip inters
+        // require(inters.size == inter_ids.size)
+        // points ++= inter_ids zip inters
       }
     }
   }
