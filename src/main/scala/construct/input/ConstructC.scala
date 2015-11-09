@@ -10,9 +10,11 @@ object ConstructC extends App {
   val program = io.Source.fromFile(filename).getLines.reduceLeft(_+"\n"+_)
   ConstructParser(program) match {
     case ConstructParser.Success(t, _) => {
-      val main = t.main getOrElse {throw new Error("Missing Main")}
-      interpreter.inputs(main.parameters)
-      main.statements foreach {interpreter(_)}
+      val main = t.constructions(0)
+      val rest = t.constructions.drop(1)
+      interpreter.run(main, rest)
+//      interpreter.inputs(main.parameters)
+//      main.statements foreach {interpreter(_)}
       println(TkzEuclide.dump(interpreter.objects))
     }
     case e: ConstructParser.NoSuccess  => println(e)

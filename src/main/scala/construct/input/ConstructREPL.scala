@@ -14,7 +14,7 @@ object ConstructREPL extends EvalLoop with App {
     else {
       ConstructParser.parseStatement(line) match {
         case ConstructParser.Success(t, _) => {
-          interpreter(t)
+          interpreter.execute(t)
           println(interpreter)
         }
         case e: ConstructParser.NoSuccess  => println(e)

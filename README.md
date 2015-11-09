@@ -1,6 +1,22 @@
 [notebook-fork]: https://github.com/hmc-cs111-fall2015/project-notebook/fork
 [CS111-projects]: https://github.com/hmc-cs111-fall2015/hmc-cs111-fall2015.github.io/wiki/Project-links
 
+# Runbook
+
+To run the project do
+
+```
+sbt 'run example.con'
+```
+
+or
+
+```
+abt 'run example2.con'
+```
+
+And then enter [1] to run the ConstructC class
+
 # DSL projects
 
 ## Overview

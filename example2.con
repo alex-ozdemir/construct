@@ -1,3 +1,7 @@
+construction mine;
+given points A, B;
+let C = bisect(A, B);
+return;
 construction bisect;
 given points A, B;
 let C1 = circle(A, B);
@@ -6,4 +10,4 @@ let D, E = intersection(C1, C2);
 let p = line(D, E);
 let q = line(A, B);
 let O = intersection(p, q);
-return points O
+return points O;
