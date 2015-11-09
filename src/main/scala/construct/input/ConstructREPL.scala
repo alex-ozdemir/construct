@@ -12,10 +12,10 @@ object ConstructREPL extends EvalLoop with App {
   loop { line =>
     if (line == "reset") {interpreter = new ConstructInterpreter}
     else {
-      ConstructParser(line) match {
+      ConstructParser.parseStatement(line) match {
         case ConstructParser.Success(t, _) => {
-          t.statements foreach {interpreter(_)}
-          println(interpreter.out)
+          interpreter(t)
+          println(interpreter)
         }
         case e: ConstructParser.NoSuccess  => println(e)
       }

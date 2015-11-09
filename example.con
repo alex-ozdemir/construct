@@ -1,8 +1,7 @@
-let A be a point;
-let B be a point;
+given points A, B;
 let C1 be a circle with center A and edge B;
 let C2 be a circle with center B and edge A;
-let C1 and C2 intersect at D, E;
+let C1 and C2 intersect at points D, E;
 let p be a line from D to E;
 let q be a line from A to B;
-let p and q intersect at O;
+let p and q intersect at points O;

@@ -6,72 +6,24 @@ import scala.collection.mutable.HashMap
 
 object TkzEuclide {
 
-  def dump(program: Program,
-           points: HashMap[Identifier,Point],
-           loci: HashMap[Identifier,PrimativeLocus]) : String = {
-    val shape_defs: HashMap[Identifier,(Identifier,Identifier)] = new HashMap()
-    header + env("document") {env("tikzpicture")
-      { program.statements map {dump(_, points, loci, shape_defs)} mkString "\n" }
+  def dump(objects: HashMap[Identifier,NamedObject]) : String = {
+    val pts = objects collect {
+      case (Identifier(name), NamedPoint(_, Point(x, y))) => (name, x, y)
     }
-  }
-
-  def dump(statement: Statement,
-           points: HashMap[Identifier,Point],
-           loci: HashMap[Identifier,PrimativeLocus],
-           shape_defs: HashMap[Identifier,(Identifier,Identifier)]): String = {
-    statement match {
-      case IntersectionStatement(id1, id2, ids) => {
-        val id_names = ids map {case Identifier(s) => s}
-        val (shape1_pt1, shape1_pt2) = shape_defs.get(id1).get
-        val (shape2_pt1, shape2_pt2) = shape_defs.get(id2).get
-        (loci.get(id1).get, loci.get(id2).get) match {
-          case (Circle(c, e), Circle(c2, e2)) => tkzInterCC(shape1_pt1.name,
-                                                            shape1_pt2.name,
-                                                            shape2_pt1.name,
-                                                            shape2_pt2.name,
-                                                            id_names)
-          case (Circle(c, e), Line(p1, p2)) => tkzInterLC(shape2_pt1.name,
-                                                          shape2_pt2.name,
-                                                          shape1_pt1.name,
-                                                          shape1_pt2.name,
-                                                          id_names)
-          case (Line(p1, p2), Circle(c, e)) => tkzInterLC(shape1_pt1.name,
-                                                          shape1_pt2.name,
-                                                          shape2_pt1.name,
-                                                          shape2_pt2.name,
-                                                          id_names)
-          case (Line(p1, p2), Line(q1, q2)) => tkzInterLL(shape1_pt1.name,
-                                                          shape1_pt2.name,
-                                                          shape2_pt1.name,
-                                                          shape2_pt2.name,
-                                                          id_names)
-        }
-      }
-      case LetStatement(id, constructor) => dump(constructor, id, points, loci, shape_defs)
-      case x : Constructor => dump(x,Identifier("NOPE"), points, loci, shape_defs)
+    val lines = objects collect {
+      case (Identifier(_), NamedLine(_, NamedPoint(name_p1, _), NamedPoint(name_p2, _)))
+              => (name_p1, name_p2)
     }
-  }
-
-  def dump(constructor: Constructor,
-           id: Identifier,
-           points: HashMap[Identifier,Point],
-           loci: HashMap[Identifier,PrimativeLocus],
-           shape_defs: HashMap[Identifier,(Identifier,Identifier)]): String = {
-    constructor match {
-      case PointConstructor() => {
-        val Point(x,y) = points.get(id).get
-        tkzPoint(id.name, x, y)
-      }
-      case LineConstructor(id1, id2) => {
-        shape_defs += (id -> (id1, id2))
-        tkzLine(id1.name, id2.name)
-      }
-      case CircleConstructor(id1, id2) => {
-        shape_defs += (id -> (id1, id2))
-        tkzCircle(id1.name, id2.name)
-      }
+    val circles = objects collect {
+      case (Identifier(_), NamedCircle(_, NamedPoint(name_c, _), NamedPoint(name_e, _)))
+              => (name_c, name_e)
     }
-  }
+    header + env("document") {env("tikzpicture") {
+      (pts map {case (n,x,y) => tkzPoint(n,x,y)} mkString "\n") +
+      (lines map {case (p1,p2) => tkzLine(p1,p2) } mkString "\n") +
+      (circles map {case (p1,p2) => tkzCircle(p1,p2)} mkString "\n")
+    }
+  }}
 
   def env(env: String)(body: String) : String = {
     s"""

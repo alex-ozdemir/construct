@@ -9,7 +9,14 @@ object Closeness {
   }
 }
 
+
+class EngineError(val msg: String) extends RuntimeException
+
 sealed abstract class Locus {
+  def asPoints : List[Point] = List()
+  def asLines : List[Line] = List()
+  def asCircles : List[Circle] = List()
+  def isPoints : Boolean = asLines == List() && asCircles == List() && asPoints != List()
   def intersect(other: Locus) : Locus
   def union(other: Locus) : Locus
   def choose : Option[Point]
@@ -34,6 +41,11 @@ sealed abstract class PrimativeLocus extends SingleLocus {
 }
 
 case class Union(val set: Set[SingleLocus]) extends Locus {
+
+  override def asPoints : List[Point] = (set collect {case x: Point => x}).toList
+  override def asLines : List[Line] = (set collect {case x: Line => x}).toList
+  override def asCircles : List[Circle] = (set collect {case x: Circle => x}).toList
+
   override def equals(other: Any) : Boolean = {
     other match {
       case union: Union => set == union.set
@@ -71,6 +83,7 @@ case class Point(val x: Double, val y: Double) extends SingleLocus {
   }
   def intersect(other: Locus) : Locus = other intersect this
   def choose : Option[Point] = Some(this)
+  override def asPoints : List[Point] = List(this)
   def +(that: Point) : Point = Point(this.x + that.x, this.y + that.y)
   def -(that: Point) : Point = Point(this.x - that.x, this.y - that.y)
   def *(that: Double) : Point = Point(this.x * that, this.y * that)
@@ -124,6 +137,7 @@ case class Circle(val c: Point, val p: Point) extends PrimativeLocus {
     }
   }
   def choose : Option[Point] = Some(p)
+  override def asCircles : List[Circle] = List(this)
 }
 
 case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
@@ -226,4 +240,5 @@ case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
     }
   }
   def choose : Option[Point] = Some(p2)
+  override def asLines : List[Line] = List(this)
 }
