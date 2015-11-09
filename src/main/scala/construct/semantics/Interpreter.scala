@@ -126,7 +126,6 @@ class ConstructInterpreter {
         }
       }
       case Statement(out, Identifier("circle"), ins) => {
-        println(s"Constructing a circle from: $ins")
         if (ins.length != 2) { throw new ConstructError("Can only construct a circle from 2 points") }
         else if (out.length != 1) { throw new ConstructError("Constructing a circle results in 1 locus") }
         else {

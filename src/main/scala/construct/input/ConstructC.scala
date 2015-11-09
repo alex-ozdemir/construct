@@ -1,22 +1,16 @@
 package construct.input
 
 import construct.input.parser.ConstructParser
+import construct.input.loader.Loader
+import construct.input.ast._
 import construct.semantics.ConstructInterpreter
 import construct.output.TkzEuclide
 
 object ConstructC extends App {
   var interpreter = new ConstructInterpreter
   val filename = if (args.length > 0) {args(0)} else {"example.con"}
-  val program = io.Source.fromFile(filename).getLines.reduceLeft(_+"\n"+_)
-  ConstructParser(program) match {
-    case ConstructParser.Success(t, _) => {
-      val main = t.constructions(0)
-      val rest = t.constructions.drop(1)
-      interpreter.run(main, rest)
-//      interpreter.inputs(main.parameters)
-//      main.statements foreach {interpreter(_)}
-      println(TkzEuclide.dump(interpreter.objects))
-    }
-    case e: ConstructParser.NoSuccess  => println(e)
-  }
+  val (constructions, main_option) = Loader(filename)
+  val main = main_option getOrElse { throw new Error(s"No main constrution in $filename") }
+  interpreter.run(main, constructions.values.toList)
+  println(TkzEuclide.dump(interpreter.objects))
 }

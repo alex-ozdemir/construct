@@ -1,4 +1,4 @@
-construction bisect;
+construction main;
 given points A, B;
 let C1 = circle(A, B);
 let C2 = circle(B, A);

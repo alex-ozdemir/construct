@@ -1,4 +1,4 @@
-construction mine;
+construction mid;
 given points A, B;
 let C = bisect(A, B);
 return;

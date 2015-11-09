@@ -11,17 +11,17 @@ object TkzEuclide {
       case (Identifier(name), NamedPoint(_, Point(x, y))) => (name, x, y)
     }
     val lines = objects collect {
-      case (Identifier(_), NamedLine(_, NamedPoint(name_p1, _), NamedPoint(name_p2, _)))
-              => (name_p1, name_p2)
+      case (Identifier(id), NamedLine(_, NamedPoint(name_p1, _), NamedPoint(name_p2, _)))
+              => (id, (name_p1, name_p2))
     }
     val circles = objects collect {
-      case (Identifier(_), NamedCircle(_, NamedPoint(name_c, _), NamedPoint(name_e, _)))
-              => (name_c, name_e)
+      case (Identifier(id), NamedCircle(_, NamedPoint(name_c, _), NamedPoint(name_e, _)))
+              => (id, (name_c, name_e))
     }
     header + env("document") {env("tikzpicture") {
       (pts map {case (n,x,y) => tkzPoint(n,x,y)} mkString "\n") +
-      (lines map {case (p1,p2) => tkzLine(p1,p2) } mkString "\n") +
-      (circles map {case (p1,p2) => tkzCircle(p1,p2)} mkString "\n")
+      (lines.values map {case (p1,p2) => tkzLine(p1,p2) } mkString "\n") +
+      (circles.values map {case (p1,p2) => tkzCircle(p1,p2)} mkString "\n")
     }
   }}
 

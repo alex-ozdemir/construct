@@ -1,0 +1,16 @@
+construction midpoint;
+given points A, B;
+let C1 = circle(A, B);
+let C2 = circle(B, A);
+let D, E = intersection(C1, C2);
+let p = line(D, E);
+let q = line(A, B);
+let M = intersection(p, q);
+return points M
+
+construction triangle_pt;
+given points A, B;
+let C1 = circle(A, B);
+let C2 = circle(B, A);
+let D, E = intersection(C1, C2);
+return points D

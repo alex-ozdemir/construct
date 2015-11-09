@@ -12,7 +12,12 @@ sbt 'run example.con'
 or
 
 ```
-abt 'run example2.con'
+sbt 'run example2.con'
+```
+or
+
+```
+sbt 'run example3.con'
 ```
 
 And then enter [1] to run the ConstructC class

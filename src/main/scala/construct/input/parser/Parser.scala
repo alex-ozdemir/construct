@@ -12,6 +12,8 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
     lazy val sep: PackratParser[String] =
       sys.props("line.separator") | ";" | "\n"
 
+    lazy val seps: PackratParser[List[String]] = sep.*
+
     lazy val path: Parser[String] =
       """[\w\.]+""".r
 
@@ -22,8 +24,8 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       repsep(include,rep1(sep))
 
     lazy val program: PackratParser[Program] =
-      ( includes~repsep(construction,sep)<~sep.* ^^
-      {case includes~constructions => Program(includes, constructions)})
+      ( includes~seps~repsep(construction,sep.*)<~sep.* ^^
+      {case includes~s1~constructions => Program(includes, constructions)})
 
     lazy val construction: PackratParser[Construction] =
       ( name~sep~params~sep~repsep(statement,sep)~sep~returns ^^
