@@ -1,3 +1,5 @@
+_Anna Pinson_
+
 First off - this is the second week in a row that doing a critique slipped my mind, and I have no excuse that holds water.
 
 I love geometry, but it's been so long that I might not be that helpful as far as knowing what implementations may be useful for a... geometric mathemetitian? Geometrist?
