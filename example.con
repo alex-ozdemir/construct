@@ -1,9 +1,9 @@
-construction main;
-given points A, B;
-let C1 = circle(A, B);
-let C2 = circle(B, A);
-let D, E = intersection(C1, C2);
-let p = line(D, E);
-let q = line(A, B);
-let O = intersection(p, q);
+construction main
+given points A, B
+let C1 = circle(A, B)
+let C2 = circle(B, A)
+let D, E = intersection(C1, C2)
+let p = line(D, E)
+let q = line(A, B)
+let O = intersection(p, q)
 return points O

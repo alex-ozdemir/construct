@@ -88,6 +88,13 @@ case class Point(val x: Double, val y: Double) extends SingleLocus {
   def -(that: Point) : Point = Point(this.x - that.x, this.y - that.y)
   def *(that: Double) : Point = Point(this.x * that, this.y * that)
   def /(that: Double) : Point = Point(this.x / that, this.y / that)
+  def /(that: Point) : Option[Double] = {
+    if ((angle - that.angle) % 180 === 0) {
+      Some(if (x == 0) y / that.y
+           else x / that.x)
+    }
+    else None
+  }
   def <>(that: Point) : Double = x * that.x + y * that.y
   def project(that: Point) : Point = that * ((this <> that) / math.pow(!that, 2))
   def reject(that: Point) : Point = this - this project that
@@ -98,24 +105,35 @@ case class Point(val x: Double, val y: Double) extends SingleLocus {
   }
   def withMag(mag: Double) = this * (mag / !this)
   def unary_!() : Double = math.sqrt(x * x + y * y)
+  def angle : Double = math.atan2(x, y)
 }
 
 case class Circle(val c: Point, val p: Point) extends PrimativeLocus {
   import Closeness._
   val r_sq = (c.y - p.y) * (c.y - p.y) + (c.x - p.x) * (c.x - p.x)
   val r = math.sqrt(r_sq)
+  def param(pt: Point) : Option[Double] = {
+    if (this contains pt)
+      Some((pt - c).angle)
+    else
+      None
+  }
+
   override def equals(other: Any) : Boolean = {
     other match {
       case circle: Circle => c == circle.c && r == circle.r
       case _ => false
     }
   }
+
+  def contains(pt: Point) : Boolean = !(pt - c) === r
+
   def intersect(other: Locus) : Locus = {
     other match {
       case line: Line => line intersectCircle this
       case circle: Circle => this intersectCircle circle
       case union: Union => union intersect this
-      case point: Point => if (!(point - c) === r) { Union(Set(point)) } else { Union(Set()) }
+      case point: Point => if (this contains point) { Union(Set(point)) } else { Union(Set()) }
     }
   }
   def intersectCircle(other: Circle) : Locus = {
@@ -149,6 +167,8 @@ case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
                         Some(slope, p1.y - slope * p1.x)
                       }
 
+  def param(pt: Point) : Option[Double] = (p2 - p1) / (pt - p1)
+
   override def equals(other: Any) : Boolean = {
     other match {
       case line: Line => {
@@ -171,8 +191,10 @@ case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
     }
   }
 
+  def contains(pt: Point) : Boolean = !((pt - p1) reject (p2 - p1)) === 0
+
   def intersectPoint(pt: Point) : Locus = {
-    if ( !((pt - p1) reject (p2 - p1)) === 0 )
+    if (this contains pt)
       pt
     else
       Union(Set())
@@ -207,7 +229,7 @@ case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
         // Line  : y = m * x + b
         // Circle: (y - c.y)^2 + (x - c.x)^2 = r^2
         //
-        // Solution:
+        // Solution: Find x in
         // Ax^2 + Bx + C = 0
         val A = math.pow(m,2) + 1
         val B = 2 * (b - circ.c.y) * m - 2 * circ.c.x

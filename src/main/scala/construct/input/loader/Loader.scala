@@ -22,6 +22,8 @@ object Loader {
       ConstructParser(program) match {
         case ConstructParser.Success(p, _) => {
           val Program(imports, cons) = p
+          // val imports = List()
+          // val cons = List(p)
           if (first.isEmpty && !cons.isEmpty) first = Some(cons(0))
           to_load ++= imports filter {file => !(loaded contains file)}
           cons filter {constructions contains _.name} foreach {con =>
@@ -32,7 +34,10 @@ object Loader {
             !(constructions contains con.name)} map {con =>
             (con.name, con)}
         }
-        case e: ConstructParser.NoSuccess => throw new Error(e.toString)
+        case e: ConstructParser.NoSuccess => {
+          println(e)
+          sys.exit(0)
+        }
       }
     }
     (constructions, first)

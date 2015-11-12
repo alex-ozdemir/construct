@@ -4,7 +4,7 @@ import construct.input.parser.ConstructParser
 import construct.input.loader.Loader
 import construct.input.ast._
 import construct.semantics.ConstructInterpreter
-import construct.output.TkzEuclide
+import construct.output.{TkzEuclide,PNG}
 
 object ConstructC extends App {
   var interpreter = new ConstructInterpreter
@@ -13,4 +13,5 @@ object ConstructC extends App {
   val main = main_option getOrElse { throw new Error(s"No main constrution in $filename") }
   interpreter.run(main, constructions.values.toList)
   println(TkzEuclide.dump(interpreter.objects))
+  println(PNG.dump(interpreter.objects))
 }

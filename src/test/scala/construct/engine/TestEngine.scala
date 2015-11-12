@@ -163,5 +163,47 @@ class EngineTest extends FunSuite with Matchers {
     c1 intersect c2 should be (c1)
     c2 intersect c1 should be (c2)
   }
+
+  test("Union of lines and line, 2 intersections") {
+    val l11 = Line(Point(0,0), Point(0,10))
+    val l12 = Line(Point(10,10), Point(5,10))
+    val u1 = Union(Set(l12, l11))
+    val l2 = Line(Point(0,5), Point(10,15))
+    val intersection = Union(Set(Point(0,5), Point(5,10)))
+    u1 intersect l2 should be (intersection)
+    l2 intersect u1 should be (intersection)
+  }
+
+  test("Union of lines and line, 1 intersection") {
+    val l11 = Line(Point(0,0), Point(0,10))
+    val l12 = Line(Point(10,10), Point(15,15))
+    val u1 = Union(Set(l12, l11))
+    val l2 = Line(Point(0,5), Point(10,15))
+    val intersection = Union(Set(Point(0,5)))
+    u1 intersect l2 should be (intersection)
+    l2 intersect u1 should be (intersection)
+  }
+
+  test("Union of lines and union of line, 2 intersections") {
+    val l11 = Line(Point(0,0), Point(0,10))
+    val l12 = Line(Point(10,10), Point(5,10))
+    val u1 = Union(Set(l12, l11))
+    val l2 = Line(Point(0,5), Point(10,15))
+    val u2 = Union(Set(l2))
+    val intersection = Union(Set(Point(0,5), Point(5,10)))
+    u1 intersect u2 should be (intersection)
+    u2 intersect u1 should be (intersection)
+  }
+
+  test("Union of lines and union of line, 1 intersection") {
+    val l11 = Line(Point(0,0), Point(0,10))
+    val l12 = Line(Point(10,10), Point(15,15))
+    val u1 = Union(Set(l12, l11))
+    val l2 = Line(Point(0,5), Point(10,15))
+    val u2 = Union(Set(l2))
+    val intersection = Union(Set(Point(0,5)))
+    u1 intersect u2 should be (intersection)
+    u2 intersect u1 should be (intersection)
+  }
 }
 

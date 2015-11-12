@@ -7,6 +7,7 @@ import scala.collection.mutable.HashMap
 
 class ConstructError(val msg: String) extends RuntimeException(msg)
 class UnknownIdentifier(override val msg: String) extends ConstructError(msg)
+class UsedIdentifier(val id: String) extends ConstructError(s"Error: The identifier $id has already been used")
 
 class ConstructInterpreter {
   val cons = new HashMap[Identifier,Construction]
@@ -16,6 +17,10 @@ class ConstructInterpreter {
   val objects = new HashMap[Identifier,NamedObject]
   var internal_counter = 0
   val def_points = Queue(Point(0.0,0.0),Point(1.0,0.0),Point(1.0,1.0))
+
+  def checkFresh(id: Identifier) =
+    if ((points.keys ++ loci.keys) exists {_==id} )
+      throw new UsedIdentifier(id.name)
 
   def lookupPoint(id: Identifier) : Point =
     points get id getOrElse {throw new UnknownIdentifier(s"Unknown point identifier $id")}
@@ -67,6 +72,7 @@ class ConstructInterpreter {
   }
 
   def intersection(inter_ids: List[Identifier], id1: Identifier, id2: Identifier) = {
+    inter_ids map {checkFresh(_)}
     val locus1 = lookupLocus(id1)
     val locus2 = lookupLocus(id2)
     val interLocus = locus1 intersect locus2
@@ -81,6 +87,7 @@ class ConstructInterpreter {
   }
 
   def construct_line(line_id: Identifier, id1: Identifier, id2: Identifier) = {
+    checkFresh(line_id)
     val pt1 = lookupPoint(id1)
     val pt2 = lookupPoint(id2)
     val named_pt1 = lookupNamedPoint(id1)
@@ -90,6 +97,7 @@ class ConstructInterpreter {
   }
 
   def construct_circle(circ_id: Identifier, c_id: Identifier, e_id: Identifier) = {
+    checkFresh(circ_id)
     val c = lookupPoint(c_id)
     val e = lookupPoint(e_id)
     val named_c = lookupNamedPoint(c_id)
@@ -99,6 +107,7 @@ class ConstructInterpreter {
   }
 
   def fn_call(fn: Identifier, outs: List[Identifier], ins: List[Identifier]) = {
+    outs map {checkFresh(_)}
     val con = lookupConstruction(fn)
     val env_cons = env filter {_ != con}
     val in_pts = ins map {lookupPoint(_)}

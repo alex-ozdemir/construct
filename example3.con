@@ -1,10 +1,10 @@
-include <lib.con>;
+include lib.con
 
-construction triangle;
-given points A, B;
-let C = midpoint(A, B);
-let D = triangle_pt(A, B);
-let p = line(A,D);
-let q = line(A,C);
-let r = line(C,D);
+construction triangle
+given points A, B
+let C = midpoint(A, B)
+let D = triangle_pt(A, B)
+let p = line(A,D)
+let q = line(A,C)
+let r = line(C,D)
 return
