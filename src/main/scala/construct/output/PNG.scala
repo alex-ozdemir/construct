@@ -157,7 +157,6 @@ object PNG {
     val targetBounds = Box(border, border, size.x - border, size.y - border)
     val bounds = boundingBox(objects)
     val targetBox = bounds fill targetBounds
-    println(s"Sending box $bounds to $targetBox!")
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
     objects foreach {case (id,obj) => drawer.draw(obj)}
