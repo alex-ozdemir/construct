@@ -11,6 +11,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
   //def apply(s: String): ParseResult[Construction] = parseAll(construction, s)
   def apply(s: String): ParseResult[Program] = parseAll(program, s)
   def parseStatement(s: String): ParseResult[Statement] = parseAll(statement, s)
+  def parseInclude(s: String): ParseResult[Path] = parseAll(include, s)
   def parseGivens(s: String): ParseResult[List[Identifier]] = parseAll(givens, s)
 
   lazy val sep: PackratParser[String] =

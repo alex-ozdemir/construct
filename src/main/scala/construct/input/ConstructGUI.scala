@@ -4,6 +4,8 @@ import scala.tools.nsc.EvalLoop
 import java.awt.image.BufferedImage
 import scala.swing._
 import construct.input.parser.ConstructParser
+import construct.input.loader.Loader
+import construct.input.ast._
 import construct.semantics.ConstructInterpreter
 import construct.output.PNG
 
@@ -15,7 +17,23 @@ object ConstructGUI extends EvalLoop with App {
   var interpreter = new ConstructInterpreter
   var first = true
   loop { line =>
-    if (first) {
+    if (line == ":reset" || line == ":r") {
+      interpreter = new ConstructInterpreter
+      first = true
+    }
+    else if (line == ":draw" || line == ":d") {
+      PNG.dump(interpreter.objects)
+    }
+    else if (line startsWith "include") {
+      ConstructParser.parseInclude(line) match {
+        case ConstructParser.Success(Path(p), _) => {
+          val (cons_map, cons) = Loader(p)
+          interpreter.constructions(cons_map.values.toList)
+        }
+        case e: ConstructParser.NoSuccess  => println(e)
+      }
+    }
+    else if (first) {
       first = false
       ConstructParser.parseGivens(line) match {
         case ConstructParser.Success(t, _) => {
@@ -23,13 +41,6 @@ object ConstructGUI extends EvalLoop with App {
         }
         case e: ConstructParser.NoSuccess  => println(e)
       }
-    }
-    else if (line == ":reset" || line == ":r") {
-      interpreter = new ConstructInterpreter
-      first = true
-    }
-    else if (line == ":draw" || line == ":d") {
-      PNG.dump(interpreter.objects)
     }
     else {
       ConstructParser.parseStatement(line) match {

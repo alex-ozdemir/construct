@@ -2,6 +2,7 @@ package construct.output
 
 import construct.input.ast._
 import construct.engine._
+import construct.engine.Closeness._
 
 import scala.collection.mutable.HashMap
 
@@ -39,26 +40,31 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawCircle(name: String, c: Point, e: Point) = {
+    val r_v = trans(e) - trans(c)
+    val ang = math.Pi / 4
     val r = !(trans(c)-trans(e))
     val Point(x, y) = trans(c)
+    val buf = 10
+    val Point(lx, ly) = (r_v rotate ang) * ((!r_v + buf) / !r_v) + trans(c)
     graphics.setColor(Color.GRAY)
     graphics.setStroke(new BasicStroke(1f))
     graphics.draw(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r))
-    // graphics.setColor(Color.BLACK)
-    // graphics.setFont(new Font("Batang", Font.PLAIN, 20))
-    // graphics.drawString(name, (x + r).toFloat, (y + r).toFloat)
+    graphics.setColor(Color.BLACK)
+    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
   def drawLine(name: String, p1: Point, p2: Point) = {
     val buf = 10
     val Point(x1, y1) = trans(p1)
     val Point(x2, y2) = trans(p2)
+    val Point(lx, ly) = Point(buf, buf) + (trans(p1) + trans(p2)) / 2
     graphics.setColor(Color.GRAY)
     graphics.setStroke(new BasicStroke(1f))
     graphics.drawLine(x1.toInt, y1.toInt, x2.toInt, y2.toInt)
-    // graphics.setColor(Color.BLACK)
-    // graphics.setFont(new Font("Batang", Font.PLAIN, 20))
-    // graphics.drawString(name, x1.toFloat, y1.toFloat)
+    graphics.setColor(Color.BLACK)
+    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
   def write(file: String) = {
@@ -120,13 +126,17 @@ object PNG {
   }
 
   def homography(domain: Box, image: Box) : Point => Point = {
-      val x_ratio = (image.x2 - image.x1) / (domain.x2 - domain.x1)
-      val y_ratio = (image.y2 - image.y1) / (domain.y2 - domain.y1)
-      return { x: Point => {
-        val v = x - domain.center
-        val v_new = Point(v.x * x_ratio, v.y * y_ratio)
-        image.center + v_new
-      }}
+    val x_out = image.x2 - image.x1
+    val x_in = domain.x2 - domain.x1
+    val y_out = image.y2 - image.y1
+    val y_in = domain.y2 - domain.y1
+    val x_ratio = if (x_in === 0) 1 else x_out / x_in
+    val y_ratio = if (y_in === 0) 1 else y_out / y_in
+    return { x: Point => {
+      val v = x - domain.center
+      val v_new = Point(v.x * x_ratio, v.y * y_ratio)
+      image.center + v_new
+    }}
   }
 
   def dump(objects: HashMap[Identifier,NamedObject]) = {
@@ -147,10 +157,10 @@ object PNG {
     val targetBounds = Box(border, border, size.x - border, size.y - border)
     val bounds = boundingBox(objects)
     val targetBox = bounds fill targetBounds
+    println(s"Sending box $bounds to $targetBox!")
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
     objects foreach {case (id,obj) => drawer.draw(obj)}
     drawer.get
   }
-
 }

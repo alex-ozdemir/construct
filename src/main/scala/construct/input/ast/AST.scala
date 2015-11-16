@@ -10,8 +10,9 @@ case class Construction(val name: Identifier,
                         val statements: List[Statement],
                         val returns: List[Identifier])
 case class Identifier(val name: String)
-case class Statement(val ids: List[Identifier], val fn: Identifier, val args: List[Identifier])
-
+case class Statement(val ids: List[Identifier],
+                     val fn: Identifier,
+                     val args: List[Identifier])
 
 sealed abstract class NamedObject
 case class NamedCircle(val name: String, val center: NamedPoint, val edge: NamedPoint) extends NamedObject
