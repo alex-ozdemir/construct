@@ -139,7 +139,7 @@ object PNG {
     }}
   }
 
-  def dump(objects: HashMap[Identifier,NamedObject]) = {
+  def dump(objects: HashMap[Identifier,NamedObject], file: String) = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
@@ -148,7 +148,7 @@ object PNG {
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
     objects foreach {case (id,obj) => drawer.draw(obj)}
-    drawer.write("out.png")
+    drawer.write(file)
   }
 
   def get(objects: HashMap[Identifier,NamedObject]) : BufferedImage = {

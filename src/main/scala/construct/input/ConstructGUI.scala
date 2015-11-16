@@ -12,6 +12,7 @@ import construct.output.PNG
 object ConstructGUI extends EvalLoop with App {
   override def prompt = "Statement> "
   val ui = new UI
+  var outputFile = "out.png"
   ui.visible = true
 
   var interpreter = new ConstructInterpreter
@@ -21,8 +22,10 @@ object ConstructGUI extends EvalLoop with App {
       interpreter = new ConstructInterpreter
       first = true
     }
-    else if (line == ":draw" || line == ":d") {
-      PNG.dump(interpreter.objects)
+    if ((line startsWith ":draw") || (line startsWith ":d")) {
+      val splitLine = line.split(" +")
+      if (splitLine.length > 1) outputFile = splitLine(1)
+      PNG.dump(interpreter.objects, outputFile)
     }
     else if (line startsWith "include") {
       ConstructParser.parseInclude(line) match {

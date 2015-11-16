@@ -10,8 +10,6 @@ object Closeness {
 }
 
 
-class EngineError(val msg: String) extends RuntimeException
-
 sealed abstract class Locus {
   def asPoints : List[Point] = List()
   def asLines : List[Line] = List()
