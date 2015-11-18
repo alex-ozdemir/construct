@@ -24,7 +24,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
   lazy val sp: Parser[String] = """[ \t]+""".r
 
   lazy val path: Parser[String] =
-    """[\w\.]+""".r
+    """[\w/\.]+""".r
 
   lazy val include: PackratParser[Path] =
     (   "include"~sp~>path ^^ {case p => Path(p)}

@@ -1,0 +1,8 @@
+include midpoint.con
+
+construction triangle_pt
+given points A, B
+let C1 = circle(A, B)
+let C2 = circle(B, A)
+let D, E = intersection(C1, C2)
+return points D
