@@ -10,9 +10,16 @@ case class Construction(val name: Identifier,
                         val statements: List[Statement],
                         val returns: List[Identifier])
 case class Identifier(val name: String)
-case class Statement(val ids: List[Identifier],
-                     val fn: Identifier,
-                     val args: List[Identifier])
+case class Statement(val pattern: Pattern, val expr: Expr)
+
+sealed abstract class Pattern
+case class Destructor(val ty: Identifier, val contents: List[Pattern]) extends Pattern
+case class Id(val id: Identifier) extends Pattern
+case class Tuple(val contents: List[Pattern]) extends Pattern
+
+sealed abstract class Expr
+case class FnApp(val fn: Identifier, val args: List[Expr]) extends Expr
+case class Exactly(val id: Identifier) extends Expr
 
 sealed abstract class NamedObject
 case class NamedCircle(val name: String, val center: NamedPoint, val edge: NamedPoint) extends NamedObject

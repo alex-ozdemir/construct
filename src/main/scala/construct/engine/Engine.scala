@@ -57,6 +57,7 @@ case class Union(val set: Set[SingleLocus]) extends Locus {
 
   def union(other: Locus) : Locus = {
     if (this == other) this
+    else if (this == Union(Set())) other
     else other match {
       case single: SingleLocus => Union(set + single)
       case union: Union => Union(union.set ++ set)

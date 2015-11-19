@@ -32,17 +32,23 @@ object TkzEuclide {
   }
 
   def tkzPoint(name: String, x: Double, y: Double) : String = {
+    if (name startsWith "TmpItem") {
+    f"""
+    \\tkzDefPoint($x%.2f,$y%.2f){$name}"""
+    }
+    else {
     f"""
     \\tkzDefPoint($x%.2f,$y%.2f){$name}
     \\tkzDrawPoints($name)
     \\tkzLabelPoints($name) """
+    }
   }
 
   val header = s"""
   \\documentclass{article}
 
-  \\usepackage[utf8]{inputenc} 
-  \\usepackage[upright]{fourier} 
+  \\usepackage[utf8]{inputenc}
+  \\usepackage[upright]{fourier}
   \\usepackage[usenames,dvipsnames,svgnames]{xcolor}
   \\usepackage{tkz-euclide,fullpage}
   \\usetkzobj{all}

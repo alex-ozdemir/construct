@@ -30,13 +30,15 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawPoint(name: String, pt: Point) = {
-    val Point(x, y) = trans(pt)
-    val r = 2
-    graphics.setColor(Color.GRAY)
-    graphics.fill(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r))
-    graphics.setColor(Color.BLACK)
-    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
-    graphics.drawString(name, (x + r).toFloat, (y + r).toFloat)
+    if (! (name startsWith "TmpItem")) {
+      val Point(x, y) = trans(pt)
+      val r = 2
+      graphics.setColor(Color.GRAY)
+      graphics.fill(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r))
+      graphics.setColor(Color.BLACK)
+      graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+      graphics.drawString(name, (x + r).toFloat, (y + r).toFloat)
+    }
   }
 
   def drawCircle(name: String, c: Point, e: Point) = {

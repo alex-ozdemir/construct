@@ -20,13 +20,14 @@ object Loader {
     val to_load: Queue[Path] = new Queue() :+ Paths.get(filename)
     while (!to_load.isEmpty) {
       val path = to_load.dequeue
-      val dir = path.getParent
+      val dir = if (path.getParent == null) Paths.get(".") else path.getParent
       loaded += path
       val program = io.Source.fromFile(path.toString).getLines.reduceLeft(_+"\n"+_)
       ConstructParser(program) match {
         case ConstructParser.Success(p, _) => {
           val Program(imports, cons) = p
           if (first.isEmpty && !cons.isEmpty) first = Some(cons(0))
+          println(s"Going to load $imports, from dir $dir")
           val importPaths = imports map {case ast.Path(pathStr) => dir.resolve(pathStr)}
           to_load ++= importPaths filter {path => !(loaded exists {Files.isSameFile(path,_)})}
           cons filter {constructions contains _.name} foreach {con =>

@@ -5,7 +5,8 @@ import construct.input.ast._
 
 object ConstructParser extends JavaTokenParsers with PackratParsers {
 
-  override val skipWhitespace = false
+  // override val skipWhitespace = false
+  override protected val whiteSpace = """[ \t]+""".r
 
   // parsing interface
   //def apply(s: String): ParseResult[Construction] = parseAll(construction, s)
@@ -19,15 +20,15 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val seps: PackratParser[List[String]] = sep.+
 
-  lazy val csep: Parser[String] = """, *""".r
+  lazy val csep: Parser[String] = """,""".r
 
-  lazy val sp: Parser[String] = """[ \t]+""".r
+  // lazy val sp: Parser[String] = """[ \t]+""".r
 
   lazy val path: Parser[String] =
     """[\w/\.]+""".r
 
   lazy val include: PackratParser[Path] =
-    (   "include"~sp~>path ^^ {case p => Path(p)}
+    (   "include"~>path ^^ {case p => Path(p)}
       | failure("Expected include, like 'include file.con'") )
 
   lazy val includes: PackratParser[List[Path]] =
@@ -50,22 +51,36 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       failure("Problem with construction structure") )
 
   lazy val name: PackratParser[Identifier] =
-    ( "construction"~sp~>id
+    ( "construction"~>id
       | failure("Problem with construction name") )
 
   lazy val returns: PackratParser[List[Identifier]] =
-    (   "return"~sp~"points"~sp~>repsep(id,csep) ^^ {case ids      => ids}
-      | "return"                                 ^^ {case "return" => List()}
+    (   "return"~>repsep(id,csep) ^^ {case ids      => ids}
+      | "return"                  ^^ {case "return" => List()}
       | failure("Problem parsing the contruction's returns") )
 
   lazy val givens: PackratParser[List[Identifier]] =
-    (   "given"~sp~"points"~sp~>ids
+    (   "given"~>ids
       | failure("Problem parsing the given points for the construction") )
 
   lazy val statement: PackratParser[Statement] =
-    (   "let"~sp~>ids~sp~"="~sp~id~"("~ids~")" ^^
-          {case outs~s1~"="~s2~fn~"("~ins~")" => Statement(outs, fn, ins)}
+    (   "let"~>pattern~"="~expr ^^ {case pattern~"="~expr => Statement(pattern, expr)}
       | failure("Problem parsing statement") )
+
+  lazy val expr: PackratParser[Expr] =
+    (   id~"("~rep1sep(expr,csep)<~")" ^^ {case id~"("~exprs => FnApp(id, exprs)}
+      | id ^^ {case id => Exactly(id)}
+      | failure("Problem parsing expression") )
+
+  lazy val pattern: PackratParser[Pattern] =
+    (   "("~>patterns<~")"    ^^ {case patterns        => Tuple(patterns)}
+      | id~"("~patterns<~")"  ^^ {case id~"("~patterns => Destructor(id, patterns)}
+      | patterns              ^^ {case patterns        => Tuple(patterns)}
+      | id                    ^^ {case id              => Id(id)}
+      | failure("Problem parsing pattern") )
+
+  lazy val patterns: PackratParser[List[Pattern]] =
+    rep1sep(pattern,csep)
 
   lazy val ids: PackratParser[List[Identifier]] = 
     ( rep1sep(id,csep) | failure("Problem with identifier list") )
