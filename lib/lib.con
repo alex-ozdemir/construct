@@ -4,5 +4,5 @@ construction triangle_pt
 given A, B
 let C1 = circle(A, B)
 let C2 = circle(B, A)
-let D, E = intersection(C1, C2)
+let (D, E) = intersection(C1, C2)
 return D
