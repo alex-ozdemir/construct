@@ -37,18 +37,27 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | failure("Error parsing includes") )
 
   lazy val program: PackratParser[Program] =
-    (   includes~constructions<~sep.* ^^ {case ins~cons => Program(ins,cons)}
+    (   includes~items<~sep.* ^^ {case ins~items => Program(ins,items)}
       | failure("Problem with program structure") )
 
-  lazy val constructions: PackratParser[List[Construction]] =
-    (   repsep(construction, seps)
-      | failure("Problem parsing constructions") )
+  lazy val items: PackratParser[List[Item]] =
+    (   repsep(item, seps)
+      | failure("Problem parsing items") )
+
+  lazy val item: PackratParser[Item] =
+    ( shape | construction )
+
+  lazy val shape: PackratParser[Shape] =
+    (   "shape"~>id~sep~givens~sep~repsep(statement,sep)~sep~returns ^^
+          {case name~s1~givens~s2~states~s3~returns =>
+            Shape(Construction(name, givens, states, returns)) }
+      | failure("Problem with shape declaration structure") )
 
   lazy val construction: PackratParser[Construction] =
-    ( name~sep~givens~sep~repsep(statement,sep)~sep~returns ^^
-    {case name~s1~givens~s2~states~s3~returns =>
-      Construction(name, givens, states, returns) } |
-      failure("Problem with construction structure") )
+    (   name~sep~givens~sep~repsep(statement,sep)~sep~returns ^^
+          {case name~s1~givens~s2~states~s3~returns =>
+            Construction(name, givens, states, returns) }
+      | failure("Problem with construction structure") )
 
   lazy val name: PackratParser[Identifier] =
     ( "construction"~>id
@@ -72,15 +81,17 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | id ^^ {case id => Exactly(id)}
       | failure("Problem parsing expression") )
 
-  lazy val pattern: PackratParser[Pattern] =
-    (   "("~>patterns<~")"    ^^ {case patterns        => Tuple(patterns)}
-      | id~"("~patterns<~")"  ^^ {case id~"("~patterns => Destructor(id, patterns)}
-      | patterns              ^^ {case patterns        => Tuple(patterns)}
-      | id                    ^^ {case id              => Id(id)}
+  lazy val pattern: PackratParser[Pattern] = pattern_in
+      // ( pattern_in | pattern_ins ^^ {case patterns => Tuple(patterns)} )
+
+  lazy val pattern_in: PackratParser[Pattern] =
+    (   "("~>pattern_ins<~")"    ^^ {case patterns        => Tuple(patterns)}
+      | id~"("~pattern_ins<~")"  ^^ {case id~"("~patterns => Destructor(id, patterns)}
+      | id                       ^^ {case id              => Id(id)}
       | failure("Problem parsing pattern") )
 
-  lazy val patterns: PackratParser[List[Pattern]] =
-    rep1sep(pattern,csep)
+  lazy val pattern_ins: PackratParser[List[Pattern]] =
+    rep1sep(pattern_in,csep)
 
   lazy val ids: PackratParser[List[Identifier]] = 
     ( rep1sep(id,csep) | failure("Problem with identifier list") )

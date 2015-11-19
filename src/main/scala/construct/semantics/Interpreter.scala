@@ -15,26 +15,26 @@ sealed abstract class Var {
   def asLocus : Locus = {
     this match {
       case Basic(v) => v
+      case Custom(_,_,v) => v
+      case Product(_,v) => v
     }
   }
 }
 
 case class Basic(val v: Locus) extends Var
-// case class Custom(val ty: Identifier, val params: List[Var], val v: Locus) extends Var
+case class Custom(val ty: Identifier, val params: List[Var], val v: Locus) extends Var
+case class Product(val params: List[Var], val v: Locus) extends Var
 
 class ConstructError(val msg: String) extends RuntimeException(s"Error: $msg")
-class UnknownIdentifier(override val msg: String) extends ConstructError(msg)
+class UnknownIdentifier(val ty: String, val id: Identifier) extends ConstructError(s"Unkown $ty identifier, <${id.name}>")
 class TypeError(val v: Var, val expected: String) extends ConstructError(s"$v was expected to be a $expected, but is not!")
 class UsedIdentifier(val id: String) extends ConstructError(s"The identifier $id has already been used")
 
 class ConstructInterpreter {
-  private val POINT = "point"
-  private val LINE  = "line"
-  private val CIRCLE  = "circle"
-  private val UNION  = "union"
 
-  val cons = new HashMap[Identifier,Construction]
-  var env = List[Construction]()
+  val constructions = new HashMap[Identifier,Construction]
+  val constructors = new HashMap[Identifier,Construction]
+  var env = List[Item]()
   val vars = new HashMap[Identifier,Var]
   val objects = new HashMap[Identifier,NamedObject]
   var internal_counter = 0
@@ -44,47 +44,60 @@ class ConstructInterpreter {
     if (vars.keys exists {_==id} ) throw new UsedIdentifier(id.name)
 
   def lookupPoint(id: Identifier) : Point = {
-    val v = vars get id getOrElse {throw new UnknownIdentifier(s"Unknown point identifier $id")}
+    val v = vars get id getOrElse {throw new UnknownIdentifier("point",id)}
     v.asPoint
   }
 
+  def lookupConstructor(id: Identifier) : Construction =
+    constructors get id getOrElse
+      {throw new UnknownIdentifier("constructor",id)}
+
   def lookupConstruction(id: Identifier) : Construction =
-    cons get id getOrElse {throw new UnknownIdentifier(s"Unknown construction identifier $id")}
+    constructions get id getOrElse
+      {throw new UnknownIdentifier("construction",id)}
 
   def lookupNamedPoint(id: Identifier) : NamedPoint =
-    objects get id getOrElse {throw new UnknownIdentifier(s"Unknown point identifier $id")}
+    objects get id getOrElse {throw new UnknownIdentifier("point",id)}
       match {
         case p : NamedPoint => p
-        case _ => throw new UnknownIdentifier(s"The identifier $id is not a point")
+        case _ => throw new ConstructError(s"The identifier $id is not a point")
       }
 
 
   def lookupVar(id: Identifier) : Var =
-    vars get id getOrElse {throw new UnknownIdentifier(s"Unknown identifier $id")}
+    vars get id getOrElse {throw new UnknownIdentifier("",id)}
 
   def lookupLocus(id: Identifier) : Locus =
-    lookupVar(id) match {
-      case Basic(locus) => locus
-      // TODO: Handle cutom
-    }
+    lookupVar(id).asLocus
 
   def nextInternalId() : Identifier = {
     internal_counter += 1
     Identifier(s"TmpItem${internal_counter}")
   }
 
-  def run(c: Construction, cs: List[Construction], in_vars: Option[List[Var]] = None): Var = {
+  def run(c: Construction, items: List[Item], in_vars: Option[List[Var]] = None): Var = {
     val Construction(_, in_ids, statements, outs) = c
     inputs(in_ids, in_vars)
-    constructions(cs)
+    add_items(items)
     statements foreach {execute(_)}
-    val loci = outs map {lookupVar(_)} map {case Basic(locus) => locus} 
-    Basic(loci.fold(Union(Set())){ _ union _ })
+    val vars = outs map {lookupVar(_)}
+    if (vars.length > 1) {
+      val loci = vars map {_.asLocus}
+      val locus = loci.fold(Union(Set())){ _ union _ }
+      Product(vars, locus)
+    }
+    else if (vars.length == 1) {
+      vars(0)
+    }
+    else {
+      Basic(Union(Set()))
+    }
   }
 
-  def constructions(cs: List[Construction]) = {
-    env = cs
-    cons ++= (cs map {c => (c.name, c)})
+  def add_items(items: List[Item]) = {
+    env = items
+    constructions ++= (items collect {case c: Construction => (c.name, c)})
+    constructors  ++= (items collect {case Shape(c)        => (c.name, c)})
   }
 
   def inputs(in_ids: List[Identifier], in_vars: Option[List[Var]]) = {
@@ -101,39 +114,28 @@ class ConstructInterpreter {
     }
   }
 
-  def intersection(v1: Var, v2: Var) : Var =
-    Basic(v1.asLocus intersect v2.asLocus)
+  def intersection(v1: Var, v2: Var) : Var = Basic(v1.asLocus intersect v2.asLocus)
 
-//     if (!interLocus.isPoints) {
-//       throw new ConstructError("Intersection calls must result in only points!" +
-//         s"Found lines ${interLocus.asLines} and circles ${interLocus.asCircles}.");
-//     }
-//     val inters = interLocus.asPoints
-//     require(inters.size == inter_ids.size)
-//     points ++= inter_ids zip inters
-//     objects ++= inter_ids zip inters map {case (id, pt) => (id, NamedPoint(id.name, pt))}
+  def construct_line(p1: Var, p2: Var) : Var = Basic(Line(p1.asPoint, p2.asPoint))
 
-  def construct_line(p1: Var, p2: Var) : Var =
-    Basic(Line(p1.asPoint, p2.asPoint))
-//     val pt1 = lookupPoint(id1)
-//     val pt2 = lookupPoint(id2)
-//     val named_pt1 = lookupNamedPoint(id1)
-//     val named_pt2 = lookupNamedPoint(id2)
-//     loci += (line_id -> Line(pt1, pt2))
-//     objects += (line_id -> NamedLine(line_id.name, named_pt1, named_pt2))
-
-  def construct_circle(c: Var, e: Var) : Var =
-    Basic(Circle(c.asPoint, e.asPoint))
-
-//     checkFresh(circ_id)
-//     val c = lookupPoint(c_id)
-//     val e = lookupPoint(e_id)
-//     val named_c = lookupNamedPoint(c_id)
-//     val named_e = lookupNamedPoint(e_id)
-//     loci += (circ_id -> Circle(c, e))
-//     objects += (circ_id -> NamedCircle(circ_id.name, named_c, named_e))
+  def construct_circle(c: Var, e: Var) : Var = Basic(Circle(c.asPoint, e.asPoint))
 
   def fn_call(fn: Identifier, ins: List[Var]) : Var = {
+    if (constructors contains fn) constructor_call(fn, ins)
+    else construction_call(fn, ins)
+  }
+
+  def constructor_call(fn: Identifier, ins: List[Var]) : Var = {
+    val con = lookupConstructor(fn)
+    val env_cons = env filter {_ != con}
+    val con_in_count = con.parameters.length
+    mk_arg_count_checker(con)(ins)
+    val call_eval = new ConstructInterpreter
+    val v = call_eval.run(con, env_cons, Some(ins))
+    Custom(fn, ins, v.asLocus)
+  }
+
+  def construction_call(fn: Identifier, ins: List[Var]) : Var = {
     val con = lookupConstruction(fn)
     val env_cons = env filter {_ != con}
     val con_in_count = con.parameters.length
@@ -212,6 +214,7 @@ class ConstructInterpreter {
                                       NamedPoint(pt2_id.name, pt2))
         objects += (id -> named_circle)
       }
+      case x: Custom => {}
       case x => throw new Error(s"Could not create visual for $x")
     }
   }
@@ -220,7 +223,7 @@ class ConstructInterpreter {
     (pattern, v) match {
       case (Tuple(pats), Basic(Union(vars))) => {
         if (pats.length != vars.toList.length) {
-          throw new ConstructError(s"Tried to bind the union $vars with ${vars.toList.length} item to the pattern ${Tuple(pats)} with ${pats.length} item")
+          throw new ConstructError(s"Tried to bind the union $vars with ${vars.toList.length} items to the pattern ${Tuple(pats)} with ${pats.length} items")
         }
         pats zip (vars.toList map {Basic(_)}) map Function.tupled(pattern_match _ )
       }
@@ -228,7 +231,23 @@ class ConstructInterpreter {
         vars += (id -> v)
         register_names(id, v)
       }
-      case _ => { throw new Error("unimplemented") }
+      case (Tuple(pats), Product(vars, _)) => {
+        if (pats.length != vars.toList.length) {
+          throw new ConstructError(s"Tried to bind the union $vars with ${vars.toList.length} items to the pattern ${Tuple(pats)} with ${pats.length} items")
+        }
+        pats zip vars.toList map Function.tupled(pattern_match _ )
+      }
+      case (Destructor(ty1, pats), Custom(ty2, vars, _)) => {
+        if (ty1 != ty2) {
+          throw new TypeError(v, ty1.name)
+        }
+        if (pats.length != vars.toList.length) {
+          throw new ConstructError(s"Tried to bind the union $vars with ${vars.toList.length} items to the pattern ${Tuple(pats)} with ${pats.length} items")
+        }
+        pats zip vars.toList map Function.tupled(pattern_match _ )
+
+      }
+      case x => { throw new Error(s"unimplemented: match $x") }
       // TODO Custom & Desctructor
     }
   }

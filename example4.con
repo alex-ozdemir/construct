@@ -1,0 +1,22 @@
+shape triangle
+given A, B, C
+let p = line(A,B)
+let q = line(B,C)
+let r = line(A,C)
+return p, q, r
+
+construction main
+given A, B
+let T = triangle_from_pair(A, B)
+let triangle(D, E, F) = T
+return
+
+construction triangle_from_pair
+given A, B
+let C1 = circle(A, B)
+let C2 = circle(B, A)
+let (D, E) = intersection(C1, C2)
+let T = triangle(A, B, D)
+return T
+
+

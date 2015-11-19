@@ -4,11 +4,14 @@ import construct.engine._
 
 case class Path(val path: String)
 case class Program(val references: List[Path],
-                   val constructions: List[Construction])
+                   val constructions: List[Item])
+
+sealed abstract class Item
 case class Construction(val name: Identifier,
                         val parameters: List[Identifier],
                         val statements: List[Statement],
-                        val returns: List[Identifier])
+                        val returns: List[Identifier]) extends Item
+case class Shape(val con: Construction) extends Item
 case class Identifier(val name: String)
 case class Statement(val pattern: Pattern, val expr: Expr)
 

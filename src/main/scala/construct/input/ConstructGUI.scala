@@ -30,8 +30,8 @@ object ConstructGUI extends EvalLoop with App {
     else if (line startsWith "include") {
       ConstructParser.parseInclude(line) match {
         case ConstructParser.Success(Path(p), _) => {
-          val (cons_map, cons) = Loader(p)
-          interpreter.constructions(cons_map.values.toList)
+          val (item_map, cons) = Loader(p)
+          interpreter.add_items(item_map.values.toList)
         }
         case e: ConstructParser.NoSuccess  => println(e)
       }
