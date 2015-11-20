@@ -7,6 +7,7 @@ import construct.input.parser.ConstructParser
 import construct.input.loader.Loader
 import construct.input.ast._
 import construct.semantics.ConstructInterpreter
+import construct.semantics.ConstructError
 import construct.output.PNG
 
 object ConstructGUI extends EvalLoop with App {
@@ -18,42 +19,47 @@ object ConstructGUI extends EvalLoop with App {
   var interpreter = new ConstructInterpreter
   var first = true
   loop { line =>
-    if (line == ":reset" || line == ":r") {
-      interpreter = new ConstructInterpreter
-      first = true
-    }
-    if ((line startsWith ":draw") || (line startsWith ":d")) {
-      val splitLine = line.split(" +")
-      if (splitLine.length > 1) outputFile = splitLine(1)
-      PNG.dump(interpreter.objects, outputFile)
-    }
-    else if (line startsWith "include") {
-      ConstructParser.parseInclude(line) match {
-        case ConstructParser.Success(Path(p), _) => {
-          val (item_map, cons) = Loader(p)
-          interpreter.add_items(item_map.values.toList)
-        }
-        case e: ConstructParser.NoSuccess  => println(e)
+    try {
+      if (line == ":reset" || line == ":r") {
+        interpreter = new ConstructInterpreter
+        first = true
       }
-    }
-    else if (first) {
-      first = false
-      ConstructParser.parseGivens(line) match {
-        case ConstructParser.Success(t, _) => {
-          interpreter.inputs(t, None)
-        }
-        case e: ConstructParser.NoSuccess  => println(e)
+      else if ((line startsWith ":draw") || (line startsWith ":d")) {
+        val splitLine = line.split(" +")
+        if (splitLine.length > 1) outputFile = splitLine(1)
+        PNG.dump(interpreter.objects, outputFile)
       }
-    }
-    else {
-      ConstructParser.parseStatement(line) match {
-        case ConstructParser.Success(t, _) => {
-          interpreter.execute(t)
+      else if (line startsWith "include") {
+        ConstructParser.parseInclude(line) match {
+          case ConstructParser.Success(Path(p), _) => {
+            val (item_map, cons) = Loader(p)
+            interpreter.add_items(item_map.values.toList)
+          }
+          case e: ConstructParser.NoSuccess  => println(e)
         }
-        case e: ConstructParser.NoSuccess  => println(e)
       }
+      else if (first) {
+        first = false
+        ConstructParser.parseGivens(line) match {
+          case ConstructParser.Success(t, _) => {
+            interpreter.inputs(t, None)
+          }
+          case e: ConstructParser.NoSuccess  => println(e)
+        }
+      }
+      else {
+        ConstructParser.parseStatement(line) match {
+          case ConstructParser.Success(t, _) => {
+            interpreter.execute(t)
+          }
+          case e: ConstructParser.NoSuccess  => println(e)
+        }
+      }
+      ui.setImage(PNG.get(interpreter.objects))
     }
-    ui.setImage(PNG.get(interpreter.objects))
+    catch {
+      case e: ConstructError => println(e)
+    }
   }
   ui.dispose()
 }

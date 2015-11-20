@@ -26,9 +26,9 @@ case class Custom(val ty: Identifier, val params: List[Var], val v: Locus) exten
 case class Product(val params: List[Var], val v: Locus) extends Var
 
 class ConstructError(val msg: String) extends RuntimeException(s"Error: $msg")
-class UnknownIdentifier(val ty: String, val id: Identifier) extends ConstructError(s"Unkown $ty identifier, <${id.name}>")
-class TypeError(val v: Var, val expected: String) extends ConstructError(s"$v was expected to be a $expected, but is not!")
-class UsedIdentifier(val id: String) extends ConstructError(s"The identifier $id has already been used")
+case class UnknownIdentifier(val ty: String, val id: Identifier) extends ConstructError(s"Unkown $ty identifier, <${id.name}>")
+case class TypeError(val v: Var, val expected: String) extends ConstructError(s"$v was expected to be a $expected, but is not!")
+case class UsedIdentifier(val id: String) extends ConstructError(s"The identifier $id has already been used")
 
 class ConstructInterpreter {
 
@@ -247,8 +247,7 @@ class ConstructInterpreter {
         pats zip vars.toList map Function.tupled(pattern_match _ )
 
       }
-      case x => { throw new Error(s"unimplemented: match $x") }
-      // TODO Custom & Desctructor
+      case (pat, v) => { throw new ConstructError(s"Cannot match $v to pattern $pat") }
     }
   }
 

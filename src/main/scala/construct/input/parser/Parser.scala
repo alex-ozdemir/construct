@@ -45,7 +45,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | failure("Problem parsing items") )
 
   lazy val item: PackratParser[Item] =
-    ( shape | construction )
+    ( shape | construction | failure("Expected an item or construction") )
 
   lazy val shape: PackratParser[Shape] =
     (   "shape"~>id~sep~givens~sep~repsep(statement,sep)~sep~returns ^^
