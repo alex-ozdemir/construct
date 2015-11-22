@@ -120,6 +120,10 @@ class ConstructInterpreter {
 
   def construct_circle(c: Var, e: Var) : Var = Basic(Circle(c.asPoint, e.asPoint))
 
+  def construct_ray(p1: Var, p2: Var) : Var = Basic(Ray(p1.asPoint, p2.asPoint))
+
+  def construct_segment(p1: Var, p2: Var) : Var = Basic(Segment(p1.asPoint, p2.asPoint))
+
   def fn_call(fn: Identifier, ins: List[Var]) : Var = {
     if (constructors contains fn) constructor_call(fn, ins)
     else construction_call(fn, ins)
@@ -174,6 +178,14 @@ class ConstructInterpreter {
             check_arg_count("line", 2)(arg_vars)
             construct_line(arg_vars(0), arg_vars(1))
           }
+          case Identifier("ray") => {
+            check_arg_count("line", 2)(arg_vars)
+            construct_ray(arg_vars(0), arg_vars(1))
+          }
+          case Identifier("segment") => {
+            check_arg_count("line", 2)(arg_vars)
+            construct_segment(arg_vars(0), arg_vars(1))
+          }
           case fn_id => {
             fn_call(fn_id, arg_vars)
           }
@@ -188,32 +200,33 @@ class ConstructInterpreter {
     pattern_match(pattern, evaluate(expr))
   }
 
+  def tmp_pair(pt1: Point, pt2: Point) : (NamedPoint, NamedPoint) = {
+    val pt1_id = nextInternalId
+    val pt2_id = nextInternalId
+    register_names(pt1_id, Basic(pt1))
+    register_names(pt2_id, Basic(pt2))
+    (NamedPoint(pt1_id.name, pt1), NamedPoint(pt2_id.name, pt2))
+  }
+
+  def two_arg_constructor(fn: ((String, NamedPoint, NamedPoint) => NamedObject),
+                          pt1: Point,
+                          pt2: Point,
+                          id: Identifier) = {
+    val (n_pt1, n_pt2) = tmp_pair(pt1, pt2)
+    val named_obj = fn(id.name, n_pt1, n_pt2)
+    objects += (id -> named_obj)
+  }
+
   def register_names(id: Identifier, v: Var) : Unit = {
     v match {
       case Basic(pt : Point) => {
         val npt = NamedPoint(id.name, pt)
         objects += (id -> npt)
       }
-      case Basic(Line(pt1, pt2)) => {
-        val pt1_id = nextInternalId
-        val pt2_id = nextInternalId
-        register_names(pt1_id, Basic(pt1))
-        register_names(pt2_id, Basic(pt2))
-        val named_line = NamedLine(id.name,
-                                   NamedPoint(pt1_id.name, pt1),
-                                   NamedPoint(pt2_id.name, pt2))
-        objects += (id -> named_line)
-      }
-      case Basic(Circle(pt1, pt2)) => {
-        val pt1_id = nextInternalId
-        val pt2_id = nextInternalId
-        register_names(pt1_id, Basic(pt1))
-        register_names(pt2_id, Basic(pt2))
-        val named_circle = NamedCircle(id.name,
-                                      NamedPoint(pt1_id.name, pt1),
-                                      NamedPoint(pt2_id.name, pt2))
-        objects += (id -> named_circle)
-      }
+      case Basic(Line(pt1, pt2)) => two_arg_constructor(NamedLine(_,_,_), pt1, pt2, id)
+      case Basic(Circle(pt1, pt2)) => two_arg_constructor(NamedCircle(_,_,_), pt1, pt2, id)
+      case Basic(Ray(pt1, pt2)) => two_arg_constructor(NamedRay(_,_,_), pt1, pt2, id)
+      case Basic(Segment(pt1, pt2)) => two_arg_constructor(NamedSegment(_,_,_), pt1, pt2, id)
       case x: Custom => {}
       case x => throw new Error(s"Could not create visual for $x")
     }

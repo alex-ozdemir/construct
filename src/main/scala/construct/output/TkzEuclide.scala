@@ -14,6 +14,14 @@ object TkzEuclide {
       case (Identifier(id), NamedLine(_, NamedPoint(name_p1, _), NamedPoint(name_p2, _)))
               => (id, (name_p1, name_p2))
     }
+    val rays = objects collect {
+      case (Identifier(id), NamedRay(_, NamedPoint(name_p1, _), NamedPoint(name_p2, _)))
+              => (id, (name_p1, name_p2))
+    }
+    val segments = objects collect {
+      case (Identifier(id), NamedSegment(_, NamedPoint(name_p1, _), NamedPoint(name_p2, _)))
+              => (id, (name_p1, name_p2))
+    }
     val circles = objects collect {
       case (Identifier(id), NamedCircle(_, NamedPoint(name_c, _), NamedPoint(name_e, _)))
               => (id, (name_c, name_e))
@@ -21,6 +29,8 @@ object TkzEuclide {
     header + env("document") {env("tikzpicture") {
       (pts map {case (n,x,y) => tkzPoint(n,x,y)} mkString "\n") +
       (lines.values map {case (p1,p2) => tkzLine(p1,p2) } mkString "\n") +
+      (rays.values map {case (p1,p2) => tkzRay(p1,p2) } mkString "\n") +
+      (segments.values map {case (p1,p2) => tkzSegment(p1,p2) } mkString "\n") +
       (circles.values map {case (p1,p2) => tkzCircle(p1,p2)} mkString "\n")
     }
   }}
@@ -55,6 +65,16 @@ object TkzEuclide {
   \\usepackage[frenchb]{babel}
   \\definecolor{fondpaille}{cmyk}{0,0,0.1,0}
   \\tkzSetUpColors[background=fondpaille,text=Maroon]  """
+
+  def tkzSegment(p1: String, p2: String) : String = {
+    f"""
+    \\tkzDrawSegment($p1,$p2) """
+  }
+
+  def tkzRay(p1: String, p2: String) : String = {
+    f"""
+    \\tkzDrawLine($p1,$p2) """
+  }
 
   def tkzLine(p1: String, p2: String) : String = {
     f"""

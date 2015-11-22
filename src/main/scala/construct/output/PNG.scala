@@ -14,6 +14,10 @@ case class IPoint(val x: Int, val y: Int)
 
 class Drawer(val size: IPoint, val trans: (Point => Point)) {
   val canvas = new BufferedImage(size.x, size.y, BufferedImage.TYPE_INT_RGB)
+  val boundary = Union(Set(Segment(Point(0,0)     ,      Point(size.x,0)),
+                           Segment(Point(size.x,0),      Point(size.x,size.y)),
+                           Segment(Point(size.x,size.y), Point(0,size.y)),
+                           Segment(Point(0,size.y),      Point(0, 0))))
   val graphics = canvas.createGraphics()
 
   {
@@ -26,6 +30,8 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
       case NamedPoint(name, pt) => drawPoint(name, pt)
       case NamedCircle(name, NamedPoint(_,c), NamedPoint(_,e)) => drawCircle(name, c, e)
       case NamedLine(name, NamedPoint(_,c), NamedPoint(_,e)) => drawLine(name, c, e)
+      case NamedRay(name, NamedPoint(_,c), NamedPoint(_,e)) => drawRay(name, c, e)
+      case NamedSegment(name, NamedPoint(_,c), NamedPoint(_,e)) => drawSegment(name, c, e)
     }
   }
 
@@ -56,7 +62,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
-  def drawLine(name: String, p1: Point, p2: Point) = {
+  def drawSegment(name: String, p1: Point, p2: Point) = {
     val buf = 10
     val Point(x1, y1) = trans(p1)
     val Point(x2, y2) = trans(p2)
@@ -64,6 +70,36 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     graphics.setColor(Color.GRAY)
     graphics.setStroke(new BasicStroke(1f))
     graphics.drawLine(x1.toInt, y1.toInt, x2.toInt, y2.toInt)
+    graphics.setColor(Color.BLACK)
+    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.drawString(name, lx.toFloat, ly.toFloat)
+  }
+
+  def drawRay(name: String, p1: Point, p2: Point) = {
+    val buf = 10
+    val p1t@Point(x1, y1) = trans(p1)
+    val p2t@Point(x2, y2) = trans(p2)
+    println(boundary)
+    println((Ray(p1t, p2t) intersect boundary))
+    val List(Point(x3, y3)) = (Ray(p1t, p2t) intersect boundary).asPoints
+    val Point(lx, ly) = Point(buf, buf) + (p1t + p2t) / 2
+    graphics.setColor(Color.GRAY)
+    graphics.setStroke(new BasicStroke(1f))
+    graphics.drawLine(x1.toInt, y1.toInt, x3.toInt, y3.toInt)
+    graphics.setColor(Color.BLACK)
+    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.drawString(name, lx.toFloat, ly.toFloat)
+  }
+
+  def drawLine(name: String, p1: Point, p2: Point) = {
+    val buf = 10
+    val p1t@Point(x1, y1) = trans(p1)
+    val p2t@Point(x2, y2) = trans(p2)
+    val List(Point(x3, y3), Point(x4, y4)) = (Line(p1t, p2t) intersect boundary).asPoints
+    val Point(lx, ly) = Point(buf, buf) + (p1t + p2t) / 2
+    graphics.setColor(Color.GRAY)
+    graphics.setStroke(new BasicStroke(1f))
+    graphics.drawLine(x4.toInt, y4.toInt, x3.toInt, y3.toInt)
     graphics.setColor(Color.BLACK)
     graphics.setFont(new Font("Batang", Font.PLAIN, 20))
     graphics.drawString(name, lx.toFloat, ly.toFloat)
@@ -113,6 +149,8 @@ object PNG {
     obj match {
       case NamedPoint(_,p) => box(p)
       case NamedLine(_,p1,p2) => box(p1) + box(p2)
+      case NamedSegment(_,p1,p2) => box(p1) + box(p2)
+      case NamedRay(_,p1,p2) => box(p1) + box(p2)
       case NamedCircle(_,NamedPoint(_,c),NamedPoint(_,e)) => {
         val r = !(c-e)
         box(c+Point(r,0)) + box(c+Point(-r,0)) + box(c+Point(0,r)) + box(c+Point(0,-r))

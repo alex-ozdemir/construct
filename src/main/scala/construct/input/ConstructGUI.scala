@@ -11,7 +11,7 @@ import construct.semantics.ConstructError
 import construct.output.PNG
 
 object ConstructGUI extends EvalLoop with App {
-  override def prompt = "Statement> "
+  override def prompt = "Construct $ "
   val ui = new UI
   var outputFile = "out.png"
   ui.visible = true

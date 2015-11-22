@@ -164,6 +164,134 @@ class EngineTest extends FunSuite with Matchers {
     c2 intersect c1 should be (c2)
   }
 
+  test("Ray and Ray to Ray") {
+    val r1 = Ray(Point(0,0), Point(1,1))
+    val r2 = Ray(Point(3,3), Point(4,4))
+    val i = Ray(Point(3,3),Point(7,7))
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Ray to Segment") {
+    val r1 = Ray(Point(0,0), Point(1,1))
+    val r2 = Ray(Point(3,3), Point(2,2))
+    val i = Segment(Point(3,3),Point(0,0))
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Ray to Point") {
+    val r1 = Ray(Point(0,0), Point(1,1))
+    val r2 = Ray(Point(0,0), Point(-1,-1))
+    val i = Point(0,0)
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Ray to None") {
+    val r1 = Ray(Point(2,2), Point(3,3))
+    val r2 = Ray(Point(0,0), Point(-1,-1))
+    val i = Union(Set())
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Ray to Point Non-colinear") {
+    val r1 = Ray(Point(0,0), Point(1,1))
+    val r2 = Ray(Point(0,0), Point(1,-1))
+    val i = Point(0,0)
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Ray to None Non-colinear") {
+    val r1 = Ray(Point(1,1), Point(1,2))
+    val r2 = Ray(Point(0,0), Point(1,-1))
+    val i = Union(Set())
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Circle to None") {
+    val r1 = Circle(Point(0,0), Point(1,0))
+    val r2 = Ray(Point(2,0), Point(3,1))
+    val i = Union(Set())
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Circle to Point") {
+    val r1 = Circle(Point(0,0), Point(1,0))
+    val r2 = Ray(Point(0,0), Point(1,0))
+    val i = Point(1,0)
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Circle to Tangent Point") {
+    val r1 = Circle(Point(0,0), Point(-1,0))
+    val r2 = Ray(Point(1,4), Point(1,3))
+    val i = Point(1,0)
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Circle to Points") {
+    val r1 = Circle(Point(0,0), Point(1,0))
+    val r2 = Ray(Point(2,0), Point(1,0))
+    val i = Union(Set(Point(1,0),Point(-1,0)))
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Segment to None") {
+    val r1 = Ray(Point(0,0), Point(1,2))
+    val r2 = Segment(Point(-1,-2), Point(-3,-6))
+    val i = Union(Set())
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Segment to None Non-colinear") {
+    val r1 = Ray(Point(0,0), Point(1,2))
+    val r2 = Segment(Point(-4,-2), Point(-3,-6))
+    val i = Union(Set())
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Segment to Segment") {
+    val r1 = Ray(Point(0,0), Point(1,2))
+    val r2 = Segment(Point(1,2), Point(-3,-6))
+    val i = Segment(Point(0,0), Point(1,2))
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Segment to Point") {
+    val r1 = Ray(Point(0,0), Point(1,2))
+    val r2 = Segment(Point(0,0), Point(-3,-6))
+    val i = Point(0,0)
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Segment to Point Non-colinear") {
+    val r1 = Ray(Point(-2,-2), Point(0,-1))
+    val r2 = Segment(Point(0,0), Point(10,0))
+    val i = Point(2,0)
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
+  test("Ray and Segment to Point Non-colinear II") {
+    val r1 = Ray(Point(0,0), Point(1,2))
+    val r2 = Segment(Point(0,0), Point(-3,-5))
+    val i = Point(0,0)
+    r1 intersect r2 should be (i)
+    r2 intersect r1 should be (i)
+  }
+
   test("Union of lines and line, 2 intersections") {
     val l11 = Line(Point(0,0), Point(0,10))
     val l12 = Line(Point(10,10), Point(5,10))
@@ -179,7 +307,8 @@ class EngineTest extends FunSuite with Matchers {
     val l12 = Line(Point(10,10), Point(15,15))
     val u1 = Union(Set(l12, l11))
     val l2 = Line(Point(0,5), Point(10,15))
-    val intersection = Union(Set(Point(0,5)))
+    // val intersection = Union(Set(Point(0,5)))
+    val intersection = Point(0,5)
     u1 intersect l2 should be (intersection)
     l2 intersect u1 should be (intersection)
   }
@@ -201,7 +330,8 @@ class EngineTest extends FunSuite with Matchers {
     val u1 = Union(Set(l12, l11))
     val l2 = Line(Point(0,5), Point(10,15))
     val u2 = Union(Set(l2))
-    val intersection = Union(Set(Point(0,5)))
+    // val intersection = Union(Set(Point(0,5)))
+    val intersection = Point(0,5)
     u1 intersect u2 should be (intersection)
     u2 intersect u1 should be (intersection)
   }
