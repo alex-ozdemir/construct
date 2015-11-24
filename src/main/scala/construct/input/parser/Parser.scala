@@ -5,15 +5,13 @@ import construct.input.ast._
 
 object ConstructParser extends JavaTokenParsers with PackratParsers {
 
-  // override val skipWhitespace = false
   override protected val whiteSpace = """[ \t]+""".r
 
   // parsing interface
-  //def apply(s: String): ParseResult[Construction] = parseAll(construction, s)
   def apply(s: String): ParseResult[Program] = parseAll(program, s)
   def parseStatement(s: String): ParseResult[Statement] = parseAll(statement, s)
   def parseInclude(s: String): ParseResult[Path] = parseAll(include, s)
-  def parseGivens(s: String): ParseResult[List[Identifier]] = parseAll(givens, s)
+  def parseGivens(s: String): ParseResult[List[Parameter]] = parseAll(givens, s)
 
   lazy val sep: PackratParser[String] =
     sys.props("line.separator") | ";"~>sys.props("line.separator") | ";"
@@ -22,10 +20,11 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val csep: Parser[String] = """,""".r
 
-  // lazy val sp: Parser[String] = """[ \t]+""".r
+  lazy val param: PackratParser[Parameter] =
+    (   id~id ^^ {case ty~name => Parameter(name, ty)}
+      | failure("Problem with parameter") )
 
-  lazy val path: Parser[String] =
-    """[\w/\.]+""".r
+  lazy val path: Parser[String] = """[\w/\.]+""".r
 
   lazy val include: PackratParser[Path] =
     (   "include"~>path ^^ {case p => Path(p)}
@@ -68,8 +67,8 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | "return"                  ^^ {case "return" => List()}
       | failure("Problem parsing the contruction's returns") )
 
-  lazy val givens: PackratParser[List[Identifier]] =
-    (   "given"~>ids
+  lazy val givens: PackratParser[List[Parameter]] =
+    (   "given"~> rep1sep(param,csep)
       | failure("Problem parsing the given points for the construction") )
 
   lazy val statement: PackratParser[Statement] =
@@ -93,7 +92,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
   lazy val pattern_ins: PackratParser[List[Pattern]] =
     rep1sep(pattern_in,csep)
 
-  lazy val ids: PackratParser[List[Identifier]] = 
+  lazy val ids: PackratParser[List[Identifier]] =
     ( rep1sep(id,csep) | failure("Problem with identifier list") )
 
   lazy val id: Parser[Identifier] = 

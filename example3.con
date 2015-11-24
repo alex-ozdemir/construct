@@ -1,7 +1,7 @@
 include lib/lib.con
 
 construction triangle
-given A, B
+given point A, point B
 let C = midpoint(A, B)
 let D = triangle_pt(A, B)
 let p = line(A,D)

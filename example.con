@@ -1,5 +1,5 @@
 construction main
-given A, B
+given point A, point B
 let C1 = circle(A, B)
 let C2 = circle(B, A)
 let (D, E) = intersection(C1, C2)

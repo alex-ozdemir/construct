@@ -53,33 +53,25 @@ case class Union(val set: Set[SingleLocus]) extends Locus {
   override def asLines : List[Line] = (set collect {case x: Line => x}).toList
   override def asCircles : List[Circle] = (set collect {case x: Circle => x}).toList
 
-  override def equals(other: Any) : Boolean = {
-    other match {
+  override def equals(that: Any) : Boolean =
+    that match {
       case union: Union => set == union.set
       case x => if (set.size == 1) x == set.toList(0) else false
     }
-  }
 
-  def intersect(other: Locus) : Locus = {
-    set map { _ intersect other } reduce { _ union _ }
-  }
+  def intersect(that: Locus) : Locus = set map { _ intersect that } reduce { _ union _ }
 
-  def union(other: Locus) : Locus = {
+  def union(other: Locus) : Locus =
     if (this == other) this
     else if (this == Union(Set())) other
     else other match {
       case single: SingleLocus => Union(set + single)
       case union: Union => Union(union.set ++ set)
     }
-  }
 
-  def choose : Option[Point] = {
-    if (set.isEmpty) None
-    else set.head.choose
-  }
+  def choose : Option[Point] = if (set.isEmpty) None else set.head.choose
 
-  def contains(that: Point) =
-    set exists { _ contains that }
+  def contains(that: Point) = set exists { _ contains that }
 
   override def empty : Boolean = set.isEmpty
 }

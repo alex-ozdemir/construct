@@ -1,0 +1,15 @@
+construction main
+given point A, point B
+let C1 = circle(A, B)
+let C2 = circle(B, A)
+let (C, D) = intersection(C1, C2)
+let P = line(C, D)
+let Q = line(A, C)
+let I = my_intersection(P, Q)
+return
+
+construction my_intersection
+given line P, line Q
+let A = intersection(P, Q)
+return A
+

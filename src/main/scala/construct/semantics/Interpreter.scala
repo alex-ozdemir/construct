@@ -76,8 +76,8 @@ class ConstructInterpreter {
   }
 
   def run(c: Construction, items: List[Item], in_vars: Option[List[Var]] = None): Var = {
-    val Construction(_, in_ids, statements, outs) = c
-    inputs(in_ids, in_vars)
+    val Construction(_, params, statements, outs) = c
+    inputs(params, in_vars)
     add_items(items)
     statements foreach {execute(_)}
     val vars = outs map {lookupVar(_)}
@@ -100,18 +100,39 @@ class ConstructInterpreter {
     constructors  ++= (items collect {case Shape(c)        => (c.name, c)})
   }
 
-  def inputs(in_ids: List[Identifier], in_vars: Option[List[Var]]) = {
+  def inputs(params: List[Parameter], in_vars: Option[List[Var]]) = {
     in_vars match {
-      case None => in_ids foreach {id => {
+      case None => params foreach {case Parameter(id, ty) => {
+        if (ty != Identifier("point"))
+          throw new ConstructError(s"Implicit givens must be of type <point>, but ${id.name} is of type ${ty.name}")
         val pt = def_points.dequeue()
         vars += (id -> Basic(pt))
         register_names(id, Basic(pt))
       }}
       case Some(ins_list) => {
-        vars ++= in_ids zip ins_list
-        in_ids zip ins_list map { case (id, v) => register_names(id, v) }
+        val assignments = params zip ins_list map {
+          case (Parameter(name, ty), v) => {
+            if (getTy(v) != ty) throw new ConstructError(s"Formal parameter has type $ty, but actual type was ${getTy(v)}.")
+            (name, v)
+          }
+        }
+        vars ++= assignments
+        assignments map { case (id, v) => register_names(id, v) }
       }
     }
+  }
+
+  def getTy(v: Var) : Identifier = {
+    Identifier(v match {
+      case Basic(_ : Line) => "line"
+      case Basic(_ : Circle) => "circle"
+      case Basic(_ : Segment) => "segment"
+      case Basic(_ : Point) => "point"
+      case Basic(_ : Ray) => "ray"
+      case Basic(_ : Union) => "union"
+      case _ : Product => throw new Error("types of products are unimplemented")
+      case Custom(t, _, _) => t.name
+    })
   }
 
   def intersection(v1: Var, v2: Var) : Var = Basic(v1.asLocus intersect v2.asLocus)
