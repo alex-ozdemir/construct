@@ -7,10 +7,11 @@ import construct.engine.Closeness._
 import scala.collection.mutable.HashMap
 
 import java.awt.image.BufferedImage
-import java.awt.{Graphics2D,Color,Font,BasicStroke}
+import java.awt.{Graphics2D,Color,Font,BasicStroke,RenderingHints}
 import java.awt.geom._
 
 case class IPoint(val x: Int, val y: Int)
+case class Scheme(val draw: Color, val label: Color)
 
 class Drawer(val size: IPoint, val trans: (Point => Point)) {
   val canvas = new BufferedImage(size.x, size.y, BufferedImage.TYPE_INT_RGB)
@@ -19,88 +20,100 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
                            Segment(Point(size.x,size.y), Point(0,size.y)),
                            Segment(Point(0,size.y),      Point(0, 0))))
   val graphics = canvas.createGraphics()
+  val tmp = Scheme(Color.BLUE, Color.GREEN)
+  val perm = Scheme(Color.GRAY, Color.BLACK)
 
   {
     graphics.setColor(Color.WHITE)
     graphics.fillRect(0, 0, canvas.getWidth, canvas.getHeight)
+    graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                              RenderingHints.VALUE_ANTIALIAS_ON);
   }
 
-  def draw(obj: NamedObject) = {
+  def drawTmp(objs: Iterable[NamedObject]) = objs foreach { draw(_, tmp) }
+
+  def drawPerm(objs: NamedObject) = draw(objs, perm)
+
+  def draw(obj: NamedObject, sc: Scheme) = {
     obj match {
-      case NamedPoint(name, pt) => drawPoint(name, pt)
-      case NamedCircle(name, NamedPoint(_,c), NamedPoint(_,e)) => drawCircle(name, c, e)
-      case NamedLine(name, NamedPoint(_,c), NamedPoint(_,e)) => drawLine(name, c, e)
-      case NamedRay(name, NamedPoint(_,c), NamedPoint(_,e)) => drawRay(name, c, e)
-      case NamedSegment(name, NamedPoint(_,c), NamedPoint(_,e)) => drawSegment(name, c, e)
+      case NamedPoint(name, pt) => drawPoint(name, pt, sc)
+      case NamedCircle(name, NamedPoint(_,c), NamedPoint(_,e)) => drawCircle(name, c, e, sc)
+      case NamedLine(name, NamedPoint(_,c), NamedPoint(_,e)) => drawLine(name, c, e, sc)
+      case NamedRay(name, NamedPoint(_,c), NamedPoint(_,e)) => drawRay(name, c, e, sc)
+      case NamedSegment(name, NamedPoint(_,c), NamedPoint(_,e)) => drawSegment(name, c, e, sc)
     }
   }
 
-  def drawPoint(name: String, pt: Point) = {
+  def drawPoint(name: String, pt: Point, scheme: Scheme) = {
     if (! (name startsWith "TmpItem")) {
       val Point(x, y) = trans(pt)
-      val r = 2
-      graphics.setColor(Color.GRAY)
+      val r = 4
+      graphics.setColor(scheme.draw)
       graphics.fill(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r))
-      graphics.setColor(Color.BLACK)
+      graphics.setColor(scheme.label)
       graphics.setFont(new Font("Batang", Font.PLAIN, 20))
       graphics.drawString(name, (x + r).toFloat, (y + r).toFloat)
     }
   }
 
-  def drawCircle(name: String, c: Point, e: Point) = {
+  def drawCircle(name: String, c: Point, e: Point, scheme: Scheme) = {
     val r_v = trans(e) - trans(c)
     val ang = math.Pi / 4
     val r = !(trans(c)-trans(e))
     val Point(x, y) = trans(c)
     val buf = 10
+    val thick = 2f
     val Point(lx, ly) = (r_v rotate ang) * ((!r_v + buf) / !r_v) + trans(c)
-    graphics.setColor(Color.GRAY)
-    graphics.setStroke(new BasicStroke(1f))
+    graphics.setColor(scheme.draw)
+    graphics.setStroke(new BasicStroke(thick))
     graphics.draw(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r))
-    graphics.setColor(Color.BLACK)
+    graphics.setColor(scheme.label)
     graphics.setFont(new Font("Batang", Font.PLAIN, 20))
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
-  def drawSegment(name: String, p1: Point, p2: Point) = {
+  def drawSegment(name: String, p1: Point, p2: Point, scheme: Scheme) = {
     val buf = 10
+    val thick = 2f
     val Point(x1, y1) = trans(p1)
     val Point(x2, y2) = trans(p2)
     val Point(lx, ly) = Point(buf, buf) + (trans(p1) + trans(p2)) / 2
-    graphics.setColor(Color.GRAY)
-    graphics.setStroke(new BasicStroke(1f))
+    graphics.setColor(scheme.draw)
+    graphics.setStroke(new BasicStroke(thick))
     graphics.drawLine(x1.toInt, y1.toInt, x2.toInt, y2.toInt)
-    graphics.setColor(Color.BLACK)
+    graphics.setColor(scheme.label)
     graphics.setFont(new Font("Batang", Font.PLAIN, 20))
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
-  def drawRay(name: String, p1: Point, p2: Point) = {
+  def drawRay(name: String, p1: Point, p2: Point, scheme: Scheme) = {
     val buf = 10
+    val thick = 2f
     val p1t@Point(x1, y1) = trans(p1)
     val p2t@Point(x2, y2) = trans(p2)
     println(boundary)
     println((Ray(p1t, p2t) intersect boundary))
     val List(Point(x3, y3)) = (Ray(p1t, p2t) intersect boundary).asPoints
     val Point(lx, ly) = Point(buf, buf) + (p1t + p2t) / 2
-    graphics.setColor(Color.GRAY)
-    graphics.setStroke(new BasicStroke(1f))
+    graphics.setColor(scheme.draw)
+    graphics.setStroke(new BasicStroke(thick))
     graphics.drawLine(x1.toInt, y1.toInt, x3.toInt, y3.toInt)
-    graphics.setColor(Color.BLACK)
+    graphics.setColor(scheme.label)
     graphics.setFont(new Font("Batang", Font.PLAIN, 20))
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
-  def drawLine(name: String, p1: Point, p2: Point) = {
+  def drawLine(name: String, p1: Point, p2: Point, scheme: Scheme) = {
     val buf = 10
+    val thick = 2f
     val p1t@Point(x1, y1) = trans(p1)
     val p2t@Point(x2, y2) = trans(p2)
     val List(Point(x3, y3), Point(x4, y4)) = (Line(p1t, p2t) intersect boundary).asPoints
     val Point(lx, ly) = Point(buf, buf) + (p1t + p2t) / 2
-    graphics.setColor(Color.GRAY)
-    graphics.setStroke(new BasicStroke(1f))
+    graphics.setColor(scheme.draw)
+    graphics.setStroke(new BasicStroke(thick))
     graphics.drawLine(x4.toInt, y4.toInt, x3.toInt, y3.toInt)
-    graphics.setColor(Color.BLACK)
+    graphics.setColor(scheme.label)
     graphics.setFont(new Font("Batang", Font.PLAIN, 20))
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
@@ -165,6 +178,13 @@ object PNG {
     objects.values.map{box(_)}.foldLeft(trivial)(_+_)
   }
 
+  def boundingBox(objects: Map[Identifier,List[NamedObject]]) : Box = {
+    val pinf = Double.PositiveInfinity
+    val ninf = Double.NegativeInfinity
+    val trivial = Box(pinf,pinf,ninf,ninf)
+    objects.values.flatMap{_ map {box(_)}}.foldLeft(trivial)(_+_)
+  }
+
   def homography(domain: Box, image: Box) : Point => Point = {
     val x_out = image.x2 - image.x1
     val x_in = domain.x2 - domain.x1
@@ -187,7 +207,7 @@ object PNG {
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
-    objects foreach {case (id,obj) => drawer.draw(obj)}
+    objects foreach {case (id,obj) => drawer.drawPerm(obj)}
     drawer.write(file)
   }
 
@@ -199,7 +219,21 @@ object PNG {
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
-    objects foreach {case (id,obj) => drawer.draw(obj)}
+    objects foreach {case (id,obj) => drawer.drawPerm(obj)}
+    drawer.get
+  }
+
+  def getTmp(perm: HashMap[Identifier,NamedObject],
+             tmp: Map[Identifier,List[NamedObject]]) : BufferedImage = {
+    val size = IPoint(500, 500)
+    val border = 25
+    val targetBounds = Box(border, border, size.x - border, size.y - border)
+    val bounds = boundingBox(perm) + boundingBox(tmp)
+    val targetBox = bounds fill targetBounds
+    val trans = homography(bounds, targetBox)
+    val drawer = new Drawer(size, trans)
+    perm foreach {case (id,obj) => drawer.drawPerm(obj)}
+    tmp foreach {case (id,obj) => drawer.drawTmp(obj)}
     drawer.get
   }
 }

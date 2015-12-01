@@ -20,6 +20,7 @@ object ConstructGUI extends EvalLoop with App {
   var first = true
   loop { line =>
     try {
+      var redraw = true
       if (line == ":reset" || line == ":r") {
         interpreter = new ConstructInterpreter
         first = true
@@ -28,6 +29,18 @@ object ConstructGUI extends EvalLoop with App {
         val splitLine = line.split(" +")
         if (splitLine.length > 1) outputFile = splitLine(1)
         PNG.dump(interpreter.objects, outputFile)
+      }
+      else if ((line startsWith ":suggest") || (line startsWith ":s")) {
+        val splitLine = line.split(" +")
+        if (splitLine.length > 1) {
+          val results = interpreter.query(Identifier(splitLine(1)))
+          val tmps = results.zipWithIndex map {
+            // case ((objs, expr), i) => (Identifier(i.toString), objs)
+            case ((objs, expr), i) => (Identifier(expr.toString), objs)
+          }
+          ui.setImage(PNG.getTmp(interpreter.objects, tmps.toMap))
+          redraw = false
+        }
       }
       else if (line startsWith "include") {
         ConstructParser.parseInclude(line) match {
@@ -55,7 +68,7 @@ object ConstructGUI extends EvalLoop with App {
           case e: ConstructParser.NoSuccess  => println(e)
         }
       }
-      ui.setImage(PNG.get(interpreter.objects))
+      if (redraw) ui.setImage(PNG.get(interpreter.objects))
     }
     catch {
       case e: ConstructError => println(e)

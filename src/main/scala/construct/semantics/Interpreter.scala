@@ -39,6 +39,7 @@ class ConstructInterpreter {
   val objects = new HashMap[Identifier,NamedObject]
   var internal_counter = 0
   val def_points = Queue(Point(0.0,0.0),Point(1.0,0.0),Point(1.0,1.0))
+  private val builtins = List("circle", "line", "segment", "ray") map {Identifier(_)}
 
   def checkFresh(id: Identifier) =
     if (vars.keys exists {_==id} ) throw new UsedIdentifier(id.name)
@@ -182,38 +183,67 @@ class ConstructInterpreter {
     check_arg_count(name, params.length)(vars)
   }
 
+  def fn_evaluate(fn_app: FnApp) : Var = {
+    val FnApp(fn, arg_exprs) = fn_app
+    val arg_vars = arg_exprs map {evaluate(_)}
+    fn match {
+      case Identifier("intersection") => {
+        check_arg_count("intersection", 2)(arg_vars)
+        intersection(arg_vars(0), arg_vars(1))
+      }
+      case Identifier("circle") => {
+        check_arg_count("circle", 2)(arg_vars)
+        construct_circle(arg_vars(0), arg_vars(1))
+      }
+      case Identifier("line") => {
+        check_arg_count("line", 2)(arg_vars)
+        construct_line(arg_vars(0), arg_vars(1))
+      }
+      case Identifier("ray") => {
+        check_arg_count("line", 2)(arg_vars)
+        construct_ray(arg_vars(0), arg_vars(1))
+      }
+      case Identifier("segment") => {
+        check_arg_count("line", 2)(arg_vars)
+        construct_segment(arg_vars(0), arg_vars(1))
+      }
+      case fn_id => {
+        fn_call(fn_id, arg_vars)
+      }
+    }
+  }
+
   def evaluate(expr: Expr) : Var = {
     expr match {
-      case FnApp(fn, arg_exprs) => {
-        val arg_vars = arg_exprs map {evaluate(_)}
-        fn match {
-          case Identifier("intersection") => {
-            check_arg_count("intersection", 2)(arg_vars)
-            intersection(arg_vars(0), arg_vars(1))
-          }
-          case Identifier("circle") => {
-            check_arg_count("circle", 2)(arg_vars)
-            construct_circle(arg_vars(0), arg_vars(1))
-          }
-          case Identifier("line") => {
-            check_arg_count("line", 2)(arg_vars)
-            construct_line(arg_vars(0), arg_vars(1))
-          }
-          case Identifier("ray") => {
-            check_arg_count("line", 2)(arg_vars)
-            construct_ray(arg_vars(0), arg_vars(1))
-          }
-          case Identifier("segment") => {
-            check_arg_count("line", 2)(arg_vars)
-            construct_segment(arg_vars(0), arg_vars(1))
-          }
-          case fn_id => {
-            fn_call(fn_id, arg_vars)
-          }
-        }
-      }
+      case fn_app: FnApp => fn_evaluate(fn_app)
       case Exactly(id) => lookupVar(id)
     }
+  }
+
+  def query(fn_id: Identifier) : List[(List[NamedObject],Expr)] = {
+    val n_params = if (builtins contains fn_id) {
+      2
+    } else {
+      lookupConstruction(fn_id).parameters.length
+    }
+
+    def try_call(id: Identifier, fn_app: FnApp) : Option[List[NamedObject]] = {
+      try {
+        val result = fn_evaluate(fn_app)
+        make_named(id, result) map { List(_) }
+      }
+      catch {
+        case _ : ConstructError => None
+      }
+    }
+
+    val possible_inputs = vars.keys map { Exactly(_) }
+    val params = IterTools.cartesianProduct( ((1 to n_params) map { n => possible_inputs }).toList )
+    val possible_calls = params map { FnApp(fn_id, _) }
+    val results : Iterable[(Option[List[NamedObject]],Expr)] = possible_calls.zipWithIndex map {
+      case (call, i) => (try_call(Identifier(i.toString), call), call)
+    }
+    results.toList collect { case (Some(objs),call) => (objs, call) }
   }
 
   def execute(statement: Statement) = {
@@ -229,29 +259,28 @@ class ConstructInterpreter {
     (NamedPoint(pt1_id.name, pt1), NamedPoint(pt2_id.name, pt2))
   }
 
-  def two_arg_constructor(fn: ((String, NamedPoint, NamedPoint) => NamedObject),
+  def two_arg_constr(fn: ((String, NamedPoint, NamedPoint) => NamedObject),
                           pt1: Point,
                           pt2: Point,
-                          id: Identifier) = {
+                          id: Identifier)
+                          : NamedObject = {
     val (n_pt1, n_pt2) = tmp_pair(pt1, pt2)
-    val named_obj = fn(id.name, n_pt1, n_pt2)
-    objects += (id -> named_obj)
+    fn(id.name, n_pt1, n_pt2)
   }
 
-  def register_names(id: Identifier, v: Var) : Unit = {
+  def make_named(id: Identifier, v: Var) : Option[NamedObject] =
     v match {
-      case Basic(pt : Point) => {
-        val npt = NamedPoint(id.name, pt)
-        objects += (id -> npt)
-      }
-      case Basic(Line(pt1, pt2)) => two_arg_constructor(NamedLine(_,_,_), pt1, pt2, id)
-      case Basic(Circle(pt1, pt2)) => two_arg_constructor(NamedCircle(_,_,_), pt1, pt2, id)
-      case Basic(Ray(pt1, pt2)) => two_arg_constructor(NamedRay(_,_,_), pt1, pt2, id)
-      case Basic(Segment(pt1, pt2)) => two_arg_constructor(NamedSegment(_,_,_), pt1, pt2, id)
-      case x: Custom => {}
+      case Basic(pt : Point) => Some(NamedPoint(id.name, pt))
+      case Basic(Line(pt1, pt2)) => Some(two_arg_constr(NamedLine(_,_,_), pt1, pt2, id))
+      case Basic(Circle(pt1, pt2)) => Some(two_arg_constr(NamedCircle(_,_,_), pt1, pt2, id))
+      case Basic(Ray(pt1, pt2)) => Some(two_arg_constr(NamedRay(_,_,_), pt1, pt2, id))
+      case Basic(Segment(pt1, pt2)) => Some(two_arg_constr(NamedSegment(_,_,_), pt1, pt2, id))
+      case x: Custom => {None}
       case x => throw new Error(s"Could not create visual for $x")
     }
-  }
+
+  def register_names(id: Identifier, v: Var) : Unit =
+    make_named(id, v) map { obj => objects += (id -> obj) }
 
   def pattern_match(pattern: Pattern, v: Var) : Unit = {
     (pattern, v) match {
@@ -286,4 +315,11 @@ class ConstructInterpreter {
   }
 
   override def toString : String = s"Variables: $vars"
+}
+
+object IterTools {
+  def cartesianProduct[T](xss: List[Iterable[T]]): Iterable[List[T]] = xss match {
+    case Nil => List(Nil)
+    case h :: t => for(xh <- h; xt <- cartesianProduct(t)) yield xh :: xt
+  }
 }
