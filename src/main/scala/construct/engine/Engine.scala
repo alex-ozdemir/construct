@@ -84,7 +84,7 @@ case class Point(val x: Double, val y: Double) extends SingleLocus {
       case _ => false
     }
   }
-  def intersect(other: Locus) : Locus = other intersect this
+  def intersect(other: Locus) : Locus = if (other contains this) this else Union(Set())
   def choose : Option[Point] = Some(this)
   override def asPoints : List[Point] = List(this)
   def +(that: Point) : Point = Point(this.x + that.x, this.y + that.y)

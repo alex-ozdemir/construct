@@ -27,10 +27,3 @@ case class Exactly(val id: Identifier) extends Expr
 case class Identifier(val name: String)
 
 case class Parameter(val name: Identifier, val ty: Identifier)
-
-sealed abstract class NamedObject
-case class NamedCircle(val name: String, val center: NamedPoint, val edge: NamedPoint) extends NamedObject
-case class NamedLine(val name: String, val p1: NamedPoint, val p2: NamedPoint) extends NamedObject
-case class NamedSegment(val name: String, val p1: NamedPoint, val p2: NamedPoint) extends NamedObject
-case class NamedRay(val name: String, val p1: NamedPoint, val p2: NamedPoint) extends NamedObject
-case class NamedPoint(val name: String, val point: Point) extends NamedObject

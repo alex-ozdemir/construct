@@ -12,6 +12,6 @@ object ConstructC extends App {
   val (constructions, main_option) = Loader(filename)
   val main = main_option getOrElse { throw new Error(s"No main constrution in $filename") }
   interpreter.run(main, constructions.values.toList)
-  println(TkzEuclide.dump(interpreter.objects))
-  println(PNG.dump(interpreter.objects, filename + ".png"))
+  println(TkzEuclide.render(interpreter.get_drawables))
+  println(PNG.dump(interpreter.get_drawables.toList, filename + ".png"))
 }

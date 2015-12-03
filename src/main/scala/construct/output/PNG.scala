@@ -20,7 +20,6 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
                            Segment(Point(size.x,size.y), Point(0,size.y)),
                            Segment(Point(0,size.y),      Point(0, 0))))
   val graphics = canvas.createGraphics()
-  val tmp = Scheme(Color.BLUE, Color.GREEN)
   val perm = Scheme(Color.GRAY, Color.BLACK)
 
   {
@@ -30,17 +29,17 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
                               RenderingHints.VALUE_ANTIALIAS_ON);
   }
 
-  def drawTmp(objs: Iterable[NamedObject]) = objs foreach { draw(_, tmp) }
+  def drawPerm(drawable: Drawable) = draw(drawable, perm)
 
-  def drawPerm(objs: NamedObject) = draw(objs, perm)
-
-  def draw(obj: NamedObject, sc: Scheme) = {
-    obj match {
-      case NamedPoint(name, pt) => drawPoint(name, pt, sc)
-      case NamedCircle(name, NamedPoint(_,c), NamedPoint(_,e)) => drawCircle(name, c, e, sc)
-      case NamedLine(name, NamedPoint(_,c), NamedPoint(_,e)) => drawLine(name, c, e, sc)
-      case NamedRay(name, NamedPoint(_,c), NamedPoint(_,e)) => drawRay(name, c, e, sc)
-      case NamedSegment(name, NamedPoint(_,c), NamedPoint(_,e)) => drawSegment(name, c, e, sc)
+  def draw(obj: Drawable, sc: Scheme) : Unit = {
+    val name = obj.name
+    obj.locus match {
+      case pt: Point => drawPoint(name, pt, sc)
+      case Circle(c, e) => drawCircle(name, c, e, sc)
+      case Line(p1, p2) => drawLine(name, p1, p2, sc)
+      case Ray(p1, p2) => drawRay(name, p1, p2, sc)
+      case Segment(p1, p2) => drawSegment(name, p1, p2, sc)
+      case Union(loci) => loci map {Drawable("",_)} foreach {draw(_, sc)}
     }
   }
 
@@ -61,8 +60,8 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     val ang = math.Pi / 4
     val r = !(trans(c)-trans(e))
     val Point(x, y) = trans(c)
-    val buf = 10
-    val thick = 2f
+    val buf = 20
+    val thick = 1.5f
     val Point(lx, ly) = (r_v rotate ang) * ((!r_v + buf) / !r_v) + trans(c)
     graphics.setColor(scheme.draw)
     graphics.setStroke(new BasicStroke(thick))
@@ -73,8 +72,8 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawSegment(name: String, p1: Point, p2: Point, scheme: Scheme) = {
-    val buf = 10
-    val thick = 2f
+    val buf = 20
+    val thick = 1.5f
     val Point(x1, y1) = trans(p1)
     val Point(x2, y2) = trans(p2)
     val Point(lx, ly) = Point(buf, buf) + (trans(p1) + trans(p2)) / 2
@@ -87,12 +86,10 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawRay(name: String, p1: Point, p2: Point, scheme: Scheme) = {
-    val buf = 10
-    val thick = 2f
+    val buf = 20
+    val thick = 1.5f
     val p1t@Point(x1, y1) = trans(p1)
     val p2t@Point(x2, y2) = trans(p2)
-    println(boundary)
-    println((Ray(p1t, p2t) intersect boundary))
     val List(Point(x3, y3)) = (Ray(p1t, p2t) intersect boundary).asPoints
     val Point(lx, ly) = Point(buf, buf) + (p1t + p2t) / 2
     graphics.setColor(scheme.draw)
@@ -104,8 +101,8 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawLine(name: String, p1: Point, p2: Point, scheme: Scheme) = {
-    val buf = 10
-    val thick = 2f
+    val buf = 20
+    val thick = 1.5f
     val p1t@Point(x1, y1) = trans(p1)
     val p2t@Point(x2, y2) = trans(p2)
     val List(Point(x3, y3), Point(x4, y4)) = (Line(p1t, p2t) intersect boundary).asPoints
@@ -156,33 +153,31 @@ case class Box(x1: Double, y1: Double, x2: Double, y2: Double) {
 
 object PNG {
 
+  val pinf = Double.PositiveInfinity
+  val ninf = Double.NegativeInfinity
+  val trivialBox = Box(pinf,pinf,ninf,ninf)
+  val tmpColors = List(Color.BLUE, Color.RED, Color.CYAN, Color.GREEN,
+                  Color.MAGENTA, Color.ORANGE, Color.YELLOW, Color.PINK)
+
   def box(p: Point) : Box = Box(p.x, p.y, p.x, p.y)
 
-  def box(obj: NamedObject) : Box = {
+  def box(obj: Drawable) : Box = {
     obj match {
-      case NamedPoint(_,p) => box(p)
-      case NamedLine(_,p1,p2) => box(p1) + box(p2)
-      case NamedSegment(_,p1,p2) => box(p1) + box(p2)
-      case NamedRay(_,p1,p2) => box(p1) + box(p2)
-      case NamedCircle(_,NamedPoint(_,c),NamedPoint(_,e)) => {
+      case Drawable(_, p: Point) => box(p)
+      case Drawable(_, Line(p1,p2)) => box(p1) + box(p2)
+      case Drawable(_, Segment(p1,p2)) => box(p1) + box(p2)
+      case Drawable(_, Ray(p1,p2)) => box(p1) + box(p2)
+      case Drawable(_, Circle(c,e)) => {
         val r = !(c-e)
         box(c+Point(r,0)) + box(c+Point(-r,0)) + box(c+Point(0,r)) + box(c+Point(0,-r))
       }
+      case Drawable(_, Union(loci)) =>
+        loci.map{l => box(Drawable("",l))}.foldLeft(trivialBox){_+_}
     }
   }
 
-  def boundingBox(objects: HashMap[Identifier,NamedObject]) : Box = {
-    val pinf = Double.PositiveInfinity
-    val ninf = Double.NegativeInfinity
-    val trivial = Box(pinf,pinf,ninf,ninf)
-    objects.values.map{box(_)}.foldLeft(trivial)(_+_)
-  }
-
-  def boundingBox(objects: Map[Identifier,List[NamedObject]]) : Box = {
-    val pinf = Double.PositiveInfinity
-    val ninf = Double.NegativeInfinity
-    val trivial = Box(pinf,pinf,ninf,ninf)
-    objects.values.flatMap{_ map {box(_)}}.foldLeft(trivial)(_+_)
+  def boundingBox(drawables: List[Drawable]) : Box = {
+    drawables.map{box(_)}.foldLeft(trivialBox)(_+_)
   }
 
   def homography(domain: Box, image: Box) : Point => Point = {
@@ -199,32 +194,31 @@ object PNG {
     }}
   }
 
-  def dump(objects: HashMap[Identifier,NamedObject], file: String) = {
+  def dump(drawables: List[Drawable], file: String) = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
-    val bounds = boundingBox(objects)
+    val bounds = boundingBox(drawables)
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
-    objects foreach {case (id,obj) => drawer.drawPerm(obj)}
+    drawables foreach {drawer.drawPerm(_)}
     drawer.write(file)
   }
 
-  def get(objects: HashMap[Identifier,NamedObject]) : BufferedImage = {
+  def get(drawables: List[Drawable]) : BufferedImage = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
-    val bounds = boundingBox(objects)
+    val bounds = boundingBox(drawables)
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
-    objects foreach {case (id,obj) => drawer.drawPerm(obj)}
+    drawables foreach {drawer.drawPerm(_)}
     drawer.get
   }
 
-  def getTmp(perm: HashMap[Identifier,NamedObject],
-             tmp: Map[Identifier,List[NamedObject]]) : BufferedImage = {
+  def getTmp(perm: List[Drawable], tmp: List[Drawable]) : BufferedImage = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
@@ -232,8 +226,8 @@ object PNG {
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
-    perm foreach {case (id,obj) => drawer.drawPerm(obj)}
-    tmp foreach {case (id,obj) => drawer.drawTmp(obj)}
+    perm foreach {drawer.drawPerm(_)}
+    tmp zip (tmpColors map {c => Scheme(c, c)}) foreach {case (drawable, scheme) => drawer.draw(drawable, scheme)}
     drawer.get
   }
 }

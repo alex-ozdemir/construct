@@ -8,16 +8,19 @@ import construct.input.loader.Loader
 import construct.input.ast._
 import construct.semantics.ConstructInterpreter
 import construct.semantics.ConstructError
-import construct.output.PNG
+import construct.output._
+import construct.engine._
 
 object ConstructGUI extends EvalLoop with App {
   override def prompt = "Construct $ "
   val ui = new UI
+  // Default output file
   var outputFile = "out.png"
   ui.visible = true
 
   var interpreter = new ConstructInterpreter
   var first = true
+  var suggestions = List[(List[Drawable],Expr,String)]()
   loop { line =>
     try {
       var redraw = true
@@ -25,20 +28,41 @@ object ConstructGUI extends EvalLoop with App {
         interpreter = new ConstructInterpreter
         first = true
       }
+      else if (
+        ConstructParser.parseSuggestionTake(line) match {
+          case ConstructParser.Success(_, _) => {
+            println("Suggestion take triggered")
+            true
+          }
+          case e: ConstructParser.NoSuccess  => false
+        }
+      ) {
+        ConstructParser.parseSuggestionTake(line) match {
+          case ConstructParser.Success((pattern, sug_id), _) => {
+            val draw_expr = suggestions find {
+              case (drawables, expr, name) => name == sug_id
+            }
+            draw_expr map {
+              case (draw, expr, _) => interpreter.execute(Statement(pattern, expr))
+            }
+            if (!draw_expr.isDefined) println(s"Suggestion $sug_id not found")
+          }
+          case e: ConstructParser.NoSuccess  => println(e)
+        }
+      }
       else if ((line startsWith ":draw") || (line startsWith ":d")) {
         val splitLine = line.split(" +")
         if (splitLine.length > 1) outputFile = splitLine(1)
-        PNG.dump(interpreter.objects, outputFile)
+        PNG.dump(interpreter.get_drawables.toList, outputFile)
       }
       else if ((line startsWith ":suggest") || (line startsWith ":s")) {
         val splitLine = line.split(" +")
         if (splitLine.length > 1) {
-          val results = interpreter.query(Identifier(splitLine(1)))
-          val tmps = results.zipWithIndex map {
-            // case ((objs, expr), i) => (Identifier(i.toString), objs)
-            case ((objs, expr), i) => (Identifier(expr.toString), objs)
+          suggestions = interpreter.query(Identifier(splitLine(1)))
+          val tmp_drawables = suggestions flatMap {
+            case (drawables, _, _) => drawables
           }
-          ui.setImage(PNG.getTmp(interpreter.objects, tmps.toMap))
+          ui.setImage(PNG.getTmp(interpreter.get_drawables.toList, tmp_drawables))
           redraw = false
         }
       }
@@ -68,7 +92,7 @@ object ConstructGUI extends EvalLoop with App {
           case e: ConstructParser.NoSuccess  => println(e)
         }
       }
-      if (redraw) ui.setImage(PNG.get(interpreter.objects))
+      if (redraw) ui.setImage(PNG.get(interpreter.get_drawables.toList))
     }
     catch {
       case e: ConstructError => println(e)

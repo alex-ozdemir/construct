@@ -12,6 +12,13 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
   def parseStatement(s: String): ParseResult[Statement] = parseAll(statement, s)
   def parseInclude(s: String): ParseResult[Path] = parseAll(include, s)
   def parseGivens(s: String): ParseResult[List[Parameter]] = parseAll(givens, s)
+  def parseSuggestionTake(s: String): ParseResult[(Pattern, String)] =
+    parseAll(suggestionTake, s)
+
+  lazy val sug_id: Parser[String] = """\d+""".r
+
+  lazy val suggestionTake: PackratParser[(Pattern, String)] =
+    "let"~>pattern~"="~sug_id ^^ {case p~"="~id => (p, id)}
 
   lazy val sep: PackratParser[String] =
     sys.props("line.separator") | ";"~>sys.props("line.separator") | ";"
