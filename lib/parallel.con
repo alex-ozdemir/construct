@@ -1,0 +1,11 @@
+include midpoint.con
+construction parallel_pt
+given point A, point B, point C
+let L = line(A, C)
+let M = line(B, C)
+let CL = circle(C, A)
+let CM = circle(C, B)
+let IL = new(intersection(CL, L))
+let D = midpoint(B, IL)
+return D
+

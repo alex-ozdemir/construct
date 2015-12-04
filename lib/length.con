@@ -1,0 +1,22 @@
+include parallel.con
+construction third
+given point A, point B
+let C1 = circle(A, B)
+let C2 = circle(B, A)
+let (D, E) = intersection(C1, C2)
+let C3 = circle(E, A)
+let F = new(intersection(C1, C3))
+let G = new(intersection(C1, C2))
+let G = new(intersection(C2, C3))
+let P = segment(A, G)
+let Q = segment(B, F)
+let C = intersection(P, Q)
+let I = parallel_pt(A, B, C)
+let L = line(C, I)
+let L1 = segment(A, E)
+let J = intersection(L1, L)
+let C4 = circle(A, J)
+let C5 = circle(C, J)
+let R = new(intersection(C4, C5))
+return R
+

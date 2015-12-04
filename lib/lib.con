@@ -1,4 +1,6 @@
 include midpoint.con
+include parallel.con
+include length.con
 
 construction triangle_pt
 given point A, point B
