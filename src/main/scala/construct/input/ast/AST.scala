@@ -1,3 +1,8 @@
+// Alex Ozdemir <aozdemir@hmc.edu>
+// Dec 2015
+//
+// This file holds the input AST for the construct system
+
 package construct.input.ast
 
 import construct.engine._
@@ -13,6 +18,7 @@ case class Construction(val name: Identifier,
                         val returns: List[Identifier]) extends Item
 case class Shape(val con: Construction) extends Item
 
+// let <Pattern> = <Expr>
 case class Statement(val pattern: Pattern, val expr: Expr)
 
 sealed abstract class Pattern
@@ -25,5 +31,4 @@ case class FnApp(val fn: Identifier, val args: List[Expr]) extends Expr
 case class Exactly(val id: Identifier) extends Expr
 
 case class Identifier(val name: String)
-
 case class Parameter(val name: Identifier, val ty: Identifier)

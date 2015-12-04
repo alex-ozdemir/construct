@@ -1,3 +1,9 @@
+// Alex Ozdemir <aozdemir@hmc.edu>
+// Dec 2015
+//
+// This files holds the parser for construct
+// It has multiple entry points, most are added to support the REPL
+
 package construct.input.parser
 
 import scala.util.parsing.combinator._
@@ -12,13 +18,15 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
   def parseStatement(s: String): ParseResult[Statement] = parseAll(statement, s)
   def parseInclude(s: String): ParseResult[Path] = parseAll(include, s)
   def parseGivens(s: String): ParseResult[List[Parameter]] = parseAll(givens, s)
+  def parseReturns(s: String): ParseResult[List[Identifier]] = parseAll(returns, s)
   def parseSuggestionTake(s: String): ParseResult[(Pattern, String)] =
     parseAll(suggestionTake, s)
 
   lazy val sug_id: Parser[String] = """\d+""".r
 
   lazy val suggestionTake: PackratParser[(Pattern, String)] =
-    "let"~>pattern~"="~sug_id ^^ {case p~"="~id => (p, id)}
+    (   pattern_plus~sug_id ^^ {case pattern~id => (pattern, id)}
+      | failure("Could not parse the suggestion usage") )
 
   lazy val sep: PackratParser[String] =
     sys.props("line.separator") | ";"~>sys.props("line.separator") | ";"
@@ -79,7 +87,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | failure("Problem parsing the given points for the construction") )
 
   lazy val statement: PackratParser[Statement] =
-    (   "let"~>pattern~"="~expr ^^ {case pattern~"="~expr => Statement(pattern, expr)}
+    (   pattern_plus~expr ^^ {case pattern~expr => Statement(pattern, expr)}
       | failure("Problem parsing statement") )
 
   lazy val expr: PackratParser[Expr] =
@@ -87,8 +95,16 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | id ^^ {case id => Exactly(id)}
       | failure("Problem parsing expression") )
 
-  lazy val pattern: PackratParser[Pattern] = pattern_in
-      // ( pattern_in | pattern_ins ^^ {case patterns => Tuple(patterns)} )
+  lazy val pattern_plus: PackratParser[Pattern] =
+    (   "let"~>pattern_in<~"="
+      | "let"~>pattern_ins<~"=" ^^ {case patterns => Tuple(patterns)}
+      | failure("Could not parse pattern") )
+
+// Code left here as an example of what doesn't work. Backtracking seems to not work?
+//  lazy val pattern: PackratParser[Pattern] =
+//    (   pattern_in
+//        | pattern_ins ^^ {case patterns => Tuple(patterns) }
+//        | failure("Could not parse pattern") )
 
   lazy val pattern_in: PackratParser[Pattern] =
     (   "("~>pattern_ins<~")"    ^^ {case patterns        => Tuple(patterns)}
@@ -97,7 +113,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | failure("Problem parsing pattern") )
 
   lazy val pattern_ins: PackratParser[List[Pattern]] =
-    rep1sep(pattern_in,csep)
+    ( rep1sep(pattern_in,csep) | failure("Problem parsing comma delimited patterns") )
 
   lazy val ids: PackratParser[List[Identifier]] =
     ( rep1sep(id,csep) | failure("Problem with identifier list") )

@@ -1,3 +1,10 @@
+// Alex Ozdemir <aozdemir@hmc.edu>
+// Dec 2015
+//
+// This files holds the loader for Construct
+// It is responsible for recursively following dependencies and yielding
+//  the constructions
+
 package construct.input.loader
 
 import java.nio.file.{Path,Paths,Files}
@@ -13,7 +20,7 @@ import construct.input.parser.ConstructParser
 
 object Loader {
 
-  def name(i: Item) : Identifier = 
+  def name(i: Item) : Identifier =
     i match {
       case c: Construction => c.name
       case Shape(c)        => c.name

@@ -1,8 +1,12 @@
+// Alex Ozdemir <aozdemir@hmc.edu>
+// Dec 2015
+//
+// This files holds the interpreter for Construct
 package construct.semantics
 
 import construct.engine._
 import construct.input.ast._
-import construct.output._
+import construct.output.Drawable
 import scala.collection.mutable.Queue
 import scala.collection.mutable.HashMap
 
@@ -63,11 +67,6 @@ class ConstructInterpreter {
 
   def lookupLocus(id: Identifier) : Locus =
     lookupVar(id).asLocus
-
-  def nextInternalId() : Identifier = {
-    internal_counter += 1
-    Identifier(s"TmpItem${internal_counter}")
-  }
 
   def run(c: Construction, items: List[Item], in_vars: Option[List[Var]] = None): Var = {
     val Construction(_, params, statements, outs) = c
@@ -153,18 +152,10 @@ class ConstructInterpreter {
     else construction_call(fn, ins)
   }
 
-  def constructor_call(fn: Identifier, ins: List[Var]) : Var = {
-    val con = lookupConstructor(fn)
-    val env_cons = env filter {_ != con}
-    val con_in_count = con.parameters.length
-    mk_arg_count_checker(con)(ins)
-    val call_eval = new ConstructInterpreter
-    val v = call_eval.run(con, env_cons, Some(ins))
-    Custom(fn, ins, v.asLocus)
-  }
-
-  def construction_call(fn: Identifier, ins: List[Var]) : Var = {
-    val con = lookupConstruction(fn)
+  def procedure_call(fn: Identifier,
+                     ins: List[Var],
+                     lookup: Identifier => Construction) : Var = {
+    val con = lookup(fn)
     val env_cons = env filter {_ != con}
     val con_in_count = con.parameters.length
     mk_arg_count_checker(con)(ins)
@@ -172,9 +163,11 @@ class ConstructInterpreter {
     call_eval.run(con, env_cons, Some(ins))
   }
 
-  def check_builtin_arg_count(fn: String, i: Int)(vars: List[Var]) =
-    if (vars.length != i)
-      throw new ConstructError(s"The builtin construction <$fn> expects $i arguments, got ${vars.length}")
+  def constructor_call(fn: Identifier, ins: List[Var]) : Var =
+    Custom(fn, ins, procedure_call(fn, ins, lookupConstructor(_)).asLocus)
+
+  def construction_call(fn: Identifier, ins: List[Var]) : Var =
+    procedure_call(fn, ins, lookupConstruction(_))
 
   def check_arg_count(fn: String, i: Int)(vars: List[Var]) =
     if (vars.length != i)
@@ -188,8 +181,7 @@ class ConstructInterpreter {
   def fn_evaluate(fn_app: FnApp) : Var = {
     val FnApp(fn, arg_exprs) = fn_app
     val arg_vars = arg_exprs map {evaluate(_)}
-    val arg0 = arg_vars(0)
-    val arg1 = arg_vars(1)
+    val (arg0, arg1) = (arg_vars(0), arg_vars(1))
     fn match {
       case Identifier("intersection") => {
         check_arg_count("intersection", 2)(arg_vars)
@@ -222,40 +214,36 @@ class ConstructInterpreter {
     }
   }
 
-  def query(fn_id: Identifier) : List[(List[Drawable],Expr,String)] = {
-    val n_params = if (builtins contains fn_id) {
-      2
-    } else {
-      lookupConstruction(fn_id).parameters.length
-    }
+  def query(fn_id: Identifier) : Iterable[(List[Drawable],Expr,String)] = {
+    val n_params = if (builtins contains fn_id) 2
+                   else lookupConstruction(fn_id).parameters.length
 
     def try_call(fn_app: FnApp) : Option[Var] = {
-      try {
-        Some(fn_evaluate(fn_app))
-      }
-      catch {
-        case _ : ConstructError => None
-      }
+      try { Some(fn_evaluate(fn_app)) }
+      catch { case _ : ConstructError => None }
     }
 
     val possible_inputs = vars.keys map { Exactly(_) }
     val params =
       IterTools.cartesianProduct( ((1 to n_params) map { n => possible_inputs }).toList )
     val possible_calls = params map { FnApp(fn_id, _) }
-    val results : Iterable[(Var,Expr)] = possible_calls map {
-      call => (try_call(call), call)
-    } collect { case (Some(objs),call) => (objs, call) }
-    val nonEmptyResults = results filter {
+    val results = possible_calls map { call => (try_call(call), call) }
+    val filteredResults = filter_query_results(results)
+    filteredResults.zipWithIndex map {
+      case ((v, expr), i) => (make_named_split_set(i.toString, v), expr, i.toString)
+    }
+  }
+
+  def filter_query_results(results: Iterable[(Option[Var],Expr)]) : Iterable[(Var,Expr)] = {
+    val extantResults = results collect { case (Some(objs),call) => (objs, call) }
+    val nonEmptyResults = extantResults filter {
       case (Basic(Union(loci)),_) => ! loci.isEmpty
       case _ => true
     }
     val newResults = nonEmptyResults filter {
       case (v, expr) => (vars.values count {v == _}) == 0
     }
-    val unique = IterTools.uniqueBy(newResults, { x: (Var, Expr) => x._1 })
-    unique.zipWithIndex map {
-      case ((v, expr), i) => (make_named_split_set(i.toString, v), expr, i.toString)
-    }
+    IterTools.uniqueBy(newResults, { x: (Var, Expr) => x._1 })
   }
 
   def execute(statement: Statement) = {
