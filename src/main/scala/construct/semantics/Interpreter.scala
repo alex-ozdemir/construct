@@ -44,7 +44,7 @@ class ConstructInterpreter {
   var internal_counter = 0
   val def_points = Queue(Point(0.0,0.0),Point(1.0,0.0),Point(1.0,1.0))
   private val builtins =
-    List("circle", "line", "segment", "ray", "intersection") map {Identifier(_)}
+    List("circle", "line", "segment", "ray", "intersection", "new") map {Identifier(_)}
 
   def checkFresh(id: Identifier) =
     if (vars.keys exists {_==id} ) throw new UsedIdentifier(id.name)
@@ -147,6 +147,18 @@ class ConstructInterpreter {
     Basic(Segment(p1.asPoint, p2.asPoint))
   }
 
+  def new_var(v: Var) : Var = {
+    v match {
+      case Basic(Union(loci)) => {
+        val new_loci = loci filter {l => !(vars.valuesIterator contains Basic(l))}
+        // If we got the set down to 1 item, drop the set wrapper
+        if (new_loci.size == 1) Basic(new_loci.toList(0))
+        else Basic(Union(new_loci))
+      }
+      case x => if (vars.valuesIterator contains x) Basic(Union(Set())) else x
+    }
+  }
+
   def fn_call(fn: Identifier, ins: List[Var]) : Var = {
     if (constructors contains fn) constructor_call(fn, ins)
     else construction_call(fn, ins)
@@ -181,7 +193,8 @@ class ConstructInterpreter {
   def fn_evaluate(fn_app: FnApp) : Var = {
     val FnApp(fn, arg_exprs) = fn_app
     val arg_vars = arg_exprs map {evaluate(_)}
-    val (arg0, arg1) = (arg_vars(0), arg_vars(1))
+    lazy val arg0 = arg_vars(0)
+    lazy val arg1 = arg_vars(1)
     fn match {
       case Identifier("intersection") => {
         check_arg_count("intersection", 2)(arg_vars)
@@ -202,6 +215,10 @@ class ConstructInterpreter {
       case Identifier("segment") => {
         check_arg_count("segment", 2)(arg_vars)
         construct_segment(arg0, arg1)
+      }
+      case Identifier("new") => {
+        check_arg_count("new", 1)(arg_vars)
+        new_var(arg0)
       }
       case fn_id => fn_call(fn_id, arg_vars)
     }

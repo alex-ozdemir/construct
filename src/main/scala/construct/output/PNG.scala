@@ -60,7 +60,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     val ang = math.Pi / 4
     val r = !(trans(c)-trans(e))
     val Point(x, y) = trans(c)
-    val buf = 20
+    val buf = 10
     val thick = 1.5f
     val Point(lx, ly) = (r_v rotate ang) * ((!r_v + buf) / !r_v) + trans(c)
     graphics.setColor(scheme.draw)
@@ -72,7 +72,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawSegment(name: String, p1: Point, p2: Point, scheme: Scheme) = {
-    val buf = 20
+    val buf = 10
     val thick = 1.5f
     val Point(x1, y1) = trans(p1)
     val Point(x2, y2) = trans(p2)
@@ -86,12 +86,12 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawRay(name: String, p1: Point, p2: Point, scheme: Scheme) = {
-    val buf = 20
+    val buf = 10
     val thick = 1.5f
     val p1t@Point(x1, y1) = trans(p1)
     val p2t@Point(x2, y2) = trans(p2)
     val List(Point(x3, y3)) = (Ray(p1t, p2t) intersect boundary).asPoints
-    val Point(lx, ly) = Point(buf, buf) + (p1t + p2t) / 2
+    val Point(lx, ly) = Point(buf, buf) + (p2t - p1t) / 3 + p1t
     graphics.setColor(scheme.draw)
     graphics.setStroke(new BasicStroke(thick))
     graphics.drawLine(x1.toInt, y1.toInt, x3.toInt, y3.toInt)
@@ -101,7 +101,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   }
 
   def drawLine(name: String, p1: Point, p2: Point, scheme: Scheme) = {
-    val buf = 20
+    val buf = 10
     val thick = 1.5f
     val p1t@Point(x1, y1) = trans(p1)
     val p2t@Point(x2, y2) = trans(p2)
