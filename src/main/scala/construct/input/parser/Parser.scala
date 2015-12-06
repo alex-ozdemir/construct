@@ -2,7 +2,7 @@
 // Dec 2015
 //
 // This files holds the parser for construct
-// It has multiple entry points, most are added to support the REPL
+// It has multiple entry points, most are added to support the GREPL
 
 package construct.input.parser
 
@@ -11,10 +11,13 @@ import construct.input.ast._
 
 object ConstructParser extends JavaTokenParsers with PackratParsers {
 
+  // Newlines are significant, and thus omitted from this definition
   override protected val whiteSpace = """[ \t]+""".r
 
-  // parsing interface
+  // whole program parsing interface
   def apply(s: String): ParseResult[Program] = parseAll(program, s)
+
+  // parsing interfaces for sub-parts of a program, used by GREPL
   def parseStatement(s: String): ParseResult[Statement] = parseAll(statement, s)
   def parseInclude(s: String): ParseResult[Path] = parseAll(include, s)
   def parseGivens(s: String): ParseResult[List[Parameter]] = parseAll(givens, s)
@@ -83,7 +86,8 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | failure("Problem parsing the contruction's returns") )
 
   lazy val givens: PackratParser[List[Parameter]] =
-    (   "given"~> rep1sep(param,csep)
+    (   "given" ~ "points" ~> ids ^^ { _ map { Parameter(_, Identifier("point")) } }
+      | "given" ~> rep1sep(param,csep)
       | failure("Problem parsing the given points for the construction") )
 
   lazy val statement: PackratParser[Statement] =
@@ -92,19 +96,13 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val expr: PackratParser[Expr] =
     (   id~"("~rep1sep(expr,csep)<~")" ^^ {case id~"("~exprs => FnApp(id, exprs)}
-      | id ^^ {case id => Exactly(id)}
+      | id                             ^^ {case id => Exactly(id)}
       | failure("Problem parsing expression") )
 
   lazy val pattern_plus: PackratParser[Pattern] =
-    (   "let"~>pattern_in<~"="
+    (   "let"~>pattern_in <~"="
       | "let"~>pattern_ins<~"=" ^^ {case patterns => Tuple(patterns)}
       | failure("Could not parse pattern") )
-
-// Code left here as an example of what doesn't work. Backtracking seems to not work?
-//  lazy val pattern: PackratParser[Pattern] =
-//    (   pattern_in
-//        | pattern_ins ^^ {case patterns => Tuple(patterns) }
-//        | failure("Could not parse pattern") )
 
   lazy val pattern_in: PackratParser[Pattern] =
     (   "("~>pattern_ins<~")"    ^^ {case patterns        => Tuple(patterns)}

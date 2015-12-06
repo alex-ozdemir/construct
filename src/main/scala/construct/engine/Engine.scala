@@ -1,3 +1,21 @@
+// Alex Ozdemir <aozdemir@hmc.edu>
+// December 2015
+//
+// This file holds the geometry engine for the Construct language
+//
+// The essential type is a Locus, which can take multiple forms
+// The concrete ones are in [square brackets]
+//
+// Locus
+//    SingleLocus
+//       PrimitiveLocus
+//          [Line]
+//          [Ray]
+//          [Segment]
+//          [Circle]
+//       [Point]
+//    [Union]
+
 package construct.engine;
 
 import scala.math;
@@ -8,7 +26,6 @@ object Closeness {
     def ===(that: Double) : Boolean = math.abs(x - that) < EPSILON
   }
 }
-
 
 sealed abstract class Locus {
   def asPoints : List[Point] = List()
@@ -91,13 +108,11 @@ case class Point(val x: Double, val y: Double) extends SingleLocus {
   def -(that: Point) : Point = Point(this.x - that.x, this.y - that.y)
   def *(that: Double) : Point = Point(this.x * that, this.y * that)
   def /(that: Double) : Point = Point(this.x / that, this.y / that)
-  def /(that: Point) : Option[Double] = {
-    if ((!(this reject that)) === 0) {
+  def /(that: Point) : Option[Double] =
+    if ((!(this reject that)) === 0)
       Some(if (x == 0) y / that.y
            else x / that.x)
-    }
     else None
-  }
   def <>(that: Point) : Double = x * that.x + y * that.y
   def project(that: Point) : Point = that * ((this <> that) / math.pow(!that, 2))
   def reject(that: Point) : Point = this - (this project that)
@@ -210,6 +225,8 @@ case class Segment(val p1: Point, val p2: Point) extends PrimativeLocus {
   def choose : Option[Point] = Some(p2)
 }
 
+
+// Holds all the intersectioni logic for primitives
 object Intersection {
   import Closeness._
   def intersect(A: PrimativeLocus, B: PrimativeLocus) : Locus =

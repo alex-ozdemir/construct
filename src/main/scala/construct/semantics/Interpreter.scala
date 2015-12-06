@@ -89,7 +89,7 @@ class ConstructInterpreter {
     constructors  ++= (items collect {case Shape(c)        => (c.name, c)})
   }
 
-  def inputs(params: List[Parameter], in_vars: Option[List[Var]]) = {
+  def inputs(params: Iterable[Parameter], in_vars: Option[List[Var]]) = {
     in_vars match {
       case None => params foreach {case Parameter(id, ty) => {
         if (ty != Identifier("point"))
