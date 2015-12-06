@@ -43,10 +43,10 @@ object Loader {
           if (first.isEmpty && !cons.isEmpty) first = Some(cons(0))
           val importPaths = imports map {case ast.Path(pathStr) => dir.resolve(pathStr)}
           to_load ++= importPaths filter {path => !(loaded exists {Files.isSameFile(path,_)})}
-          these_items filter {items contains name(_)} foreach {i =>
+          /*these_items filter {items contains name(_)} foreach {i =>
             throw new Error(s"Tried to load construction ${name(i)} from file $path, but" +
               " a construction by that name already exists")
-          }
+          }*/
           items ++= these_items filter {i =>
             !(items contains name(i))} map { i =>
               (name(i), i)

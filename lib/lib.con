@@ -1,10 +1,5 @@
 include midpoint.con
 include parallel.con
 include length.con
+include triangle.con
 
-construction triangle_pt
-given point A, point B
-let C1 = circle(A, B)
-let C2 = circle(B, A)
-let (D, E) = intersection(C1, C2)
-return D

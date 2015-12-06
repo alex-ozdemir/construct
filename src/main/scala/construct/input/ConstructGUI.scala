@@ -52,6 +52,7 @@ object ConstructREPL extends EvalLoop with App {
   var interpreter = new ConstructInterpreter
   var first = true
   var suggestions = List[(List[Drawable],Expr,String)]()
+  ui.setImage(PNG.get(interpreter.get_drawables.toList))
   loop { line =>
     try {
       var redraw = true
@@ -62,10 +63,7 @@ object ConstructREPL extends EvalLoop with App {
       }
       else if (
         ConstructParser.parseSuggestionTake(line) match {
-          case ConstructParser.Success(_, _) => {
-            println("Suggestion take triggered")
-            true
-          }
+          case ConstructParser.Success(_, _) => true
           case e: ConstructParser.NoSuccess  => false
         }
       ) {
@@ -91,6 +89,8 @@ object ConstructREPL extends EvalLoop with App {
         if (splitLine.length > 1) outputFile = splitLine(1)
         PNG.dump(interpreter.get_drawables.toList, outputFile)
       }
+      else if (line startsWith ":?")
+        println(interpreter)
       else if ((line startsWith ":write") || (line startsWith ":w")) {
         val splitLine = line.split(" +")
         if (splitLine.length == 3) {
@@ -115,9 +115,13 @@ object ConstructREPL extends EvalLoop with App {
       else if (line startsWith "include") {
         ConstructParser.parseInclude(line) match {
           case ConstructParser.Success(Path(p), _) => {
-            val (item_map, cons) = Loader(p)
-            interpreter.add_items(item_map.values.toList)
-            programStore.addInclude(Path(p))
+            try {
+              val (item_map, cons) = Loader(p)
+              interpreter.add_items(item_map.values.toList)
+              programStore.addInclude(Path(p))
+            } catch {
+              case e : java.io.FileNotFoundException => println(e)
+            }
           }
           case e: ConstructParser.NoSuccess  => println(e)
         }

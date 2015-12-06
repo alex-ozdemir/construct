@@ -39,7 +39,6 @@ class ConstructInterpreter {
 
   val constructions = new HashMap[Identifier,Construction]
   val constructors = new HashMap[Identifier,Construction]
-  var env = List[Item]()
   val vars = new HashMap[Identifier,Var]
   var internal_counter = 0
   val def_points = Queue(Point(0.0,0.0),Point(1.0,0.0),Point(1.0,1.0))
@@ -68,7 +67,9 @@ class ConstructInterpreter {
   def lookupLocus(id: Identifier) : Locus =
     lookupVar(id).asLocus
 
-  def run(c: Construction, items: List[Item], in_vars: Option[List[Var]] = None): Var = {
+  def run(c: Construction,
+          items: Iterable[Item],
+          in_vars: Option[List[Var]] = None): Var = {
     val Construction(_, params, statements, outs) = c
     inputs(params, in_vars)
     add_items(items)
@@ -83,8 +84,7 @@ class ConstructInterpreter {
     else Basic(Union(Set()))
   }
 
-  def add_items(items: List[Item]) = {
-    env = items
+  def add_items(items: Iterable[Item]) = {
     constructions ++= (items collect {case c: Construction => (c.name, c)})
     constructors  ++= (items collect {case Shape(c)        => (c.name, c)})
   }
@@ -168,7 +168,9 @@ class ConstructInterpreter {
                      ins: List[Var],
                      lookup: Identifier => Construction) : Var = {
     val con = lookup(fn)
-    val env_cons = env filter {_ != con}
+    val cons_in_new_env = constructions map { _._2 } filter { _ != con }
+    val shapes_in_new_env = constructors map { _._2 } filter { _ != con } map { Shape(_) }
+    val env_cons = cons_in_new_env ++ shapes_in_new_env
     val con_in_count = con.parameters.length
     mk_arg_count_checker(con)(ins)
     val call_eval = new ConstructInterpreter
@@ -306,7 +308,13 @@ class ConstructInterpreter {
     }
   }
 
-  override def toString : String = s"Variables: $vars"
+  override def toString : String =
+    "Variables:\n" +
+    (vars map {case (k,v) => k.toString + " => " + " ... "} mkString "\n") +
+    "\nConstructions:\n" +
+    (constructions map {case (k,v) => k.toString + " => " + " ... "} mkString "\n") +
+    "\nConstructors:\n" +
+    (constructors map {case (k,v) => k.toString + " => " + " ... "} mkString "\n")
 }
 
 object IterTools {

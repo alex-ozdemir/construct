@@ -39,7 +39,11 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
       case Line(p1, p2) => drawLine(name, p1, p2, sc)
       case Ray(p1, p2) => drawRay(name, p1, p2, sc)
       case Segment(p1, p2) => drawSegment(name, p1, p2, sc)
-      case Union(loci) => loci map {Drawable("",_)} foreach {draw(_, sc)}
+      case Union(loci) => {
+        val loci_list = loci.toList
+        loci_list.headOption map {Drawable(name,_)} map {draw(_, sc)}
+        loci_list.tail map {Drawable("",_)} foreach {draw(_, sc)}
+      }
     }
   }
 

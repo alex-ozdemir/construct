@@ -51,7 +51,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | failure("Error parsing includes") )
 
   lazy val program: PackratParser[Program] =
-    (   includes~items<~sep.* ^^ {case ins~items => Program(ins,items)}
+    (   (seps.*)~>includes~items<~sep.* ^^ {case ins~items => Program(ins,items)}
       | failure("Problem with program structure") )
 
   lazy val items: PackratParser[List[Item]] =

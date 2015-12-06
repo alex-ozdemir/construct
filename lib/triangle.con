@@ -1,0 +1,40 @@
+include midpoint.con
+
+construction triangle_pt
+given point A, point B
+let C1 = circle(A, B)
+let C2 = circle(B, A)
+let (D, E) = intersection(C1, C2)
+return D
+
+shape triangle
+given point A, point B, point C
+let a = segment(B, C)
+let b = segment(C, A)
+let c = segment(A, B)
+return a, b, c
+
+construction triangle_from_pair
+given point A, point B
+let C = triangle_pt(A, B)
+let T = triangle(A, B, C)
+return T
+
+construction obtuse_from_pair
+given point A, point B
+let D = triangle_pt(A, B)
+let C1 = circle(A, B)
+let C2 = circle(D, A)
+let E = new(intersection(C1, C2))
+let T = triangle(A, B, E)
+return T
+
+construction triangle_centroid
+given triangle T
+let triangle(A, B, C) = T
+let aM = midpoint(B, C)
+let bM = midpoint(C, A)
+let am = segment(aM, A)
+let bm = segment(bM, B)
+let center = intersection(am, bm)
+return center
