@@ -165,7 +165,7 @@ case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
       case line: Line => {
         (standard_form, line.standard_form) match {
           case (Some((s, y)), Some((s_other, y_other))) => s == s_other && y == y_other
-          case (None, None) => line.p1.x == p1.x
+          case (None, None) => line.p1.x === p1.x
           case _ => false
         }
       }
