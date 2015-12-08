@@ -40,7 +40,6 @@ class ConstructInterpreter {
   val constructions = new HashMap[Identifier,Construction]
   val constructors = new HashMap[Identifier,Construction]
   val vars = new HashMap[Identifier,Var]
-  var internal_counter = 0
   val def_points = Queue(Point(0.0,0.0),Point(1.0,0.0),Point(1.0,1.0))
   private val builtins =
     List("circle", "line", "segment", "ray", "intersection", "new") map {Identifier(_)}

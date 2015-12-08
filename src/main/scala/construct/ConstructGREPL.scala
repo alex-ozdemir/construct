@@ -95,10 +95,15 @@ object ConstructGREPL extends EvalLoop with App {
   // Processes a metacommand
   def processMetaCommand(command: String) =
     if (command == "reset" || command == "r") reset()
-    else if ((command startsWith "draw ") || (command startsWith "d")) {
+    else if (command startsWith "dt") {
       val splitCommand = command.split(" +")
       if (splitCommand.length > 1) outputFile = splitCommand(1)
-      draw()
+      drawTmp
+    }
+    else if ((command startsWith "draw") || (command startsWith "d")) {
+      val splitCommand = command.split(" +")
+      if (splitCommand.length > 1) outputFile = splitCommand(1)
+      draw
     }
     else if ((command startsWith "undo") || (command startsWith "u")) undo()
     else if (command startsWith "?") println(interpreter)
@@ -116,8 +121,13 @@ object ConstructGREPL extends EvalLoop with App {
     firstStatement = true
   }
 
-  def draw() = {
-    PNG.dump(interpreter.get_drawables.toList, outputFile)
+  def draw = PNG.dump(interpreter.get_drawables.toList, outputFile)
+
+  def drawTmp = {
+    val tmp_drawables = suggestions flatMap {
+      case (drawables, _, _) => drawables
+    }
+    PNG.dumpTmp(interpreter.get_drawables.toList, tmp_drawables, outputFile)
   }
 
   def undo() = {
