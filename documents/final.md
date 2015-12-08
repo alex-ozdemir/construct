@@ -221,7 +221,7 @@ triangles, squares, and angles instead of juts ordered sets of points.
 ### Conditionals
 
 It's worth noting that the language does not have any conditionals or branching
-at the user level. Under the hood there is all sort of branching going on in
+at the user level. Under the hood there is all sorts of branching going on in
 determining the intersections of various loci, but the user doesn't see that.
 
 From their persepective a construction is a one-path thing.
@@ -265,7 +265,6 @@ Construct $ given points A, B
 Construct $ include lib/lib.con
 Construct $ let C = triangle_pt(A, B)
 Construct $ :s circle
-Construct $ :dt sug.png
 ```
 
 ![Suggestions](http://i.imgur.com/YhOrGN1.png)
@@ -450,22 +449,22 @@ undeniably a Domain Specific Language for Classical Geometry.
 It's also good to look back at the goals I set, and see how well they've been
 met.
 
-   [ ] It should be easy to use - the user shouldn't have to type a lot to
-       communicate a simple idea.
-   [ ] The language should feel like geometry. If textual it should read like
-       geometric writing. If graphical, it should look like a construction
-   [x] The language (and the systems around it) should be interactive.
-       Constructions are simultaneously imagined and drawn.
-   [x] The language should allow for geometric precision - you are articulating a
-       geometric idea, not just a drawing. One should be able to imagine (if not
-       implement) hooking a prover up to the language and letting it go.
-   [x] The language should allow for abstraction of actions (functions), just
-       like geometers refer to previous constructions.
-   [x] The language should allow for abstraction of object (custom data types),
-       just as a geometer might regard a triple of points as a triangle.
-   [ ] If possible - as a stretch goal the language should aide the user in doing
-       constructions. This might mean helping the user search the space of
-       possible actions they could take.
+- [ ] It should be easy to use - the user shouldn't have to type a lot to
+      communicate a simple idea.
+- [ ] The language should feel like geometry. If textual it should read like
+      geometric writing. If graphical, it should look like a construction
+- [x] The language (and the systems around it) should be interactive.
+      Constructions are simultaneously imagined and drawn.
+- [x] The language should allow for geometric precision - you are articulating a
+      geometric idea, not just a drawing. One should be able to imagine (if not
+      implement) hooking a prover up to the language and letting it go.
+- [x] The language should allow for abstraction of actions (functions), just
+      like geometers refer to previous constructions.
+- [x] The language should allow for abstraction of object (custom data types),
+      just as a geometer might regard a triple of points as a triangle.
+- [ ] If possible - as a stretch goal the language should aide the user in doing
+      constructions. This might mean helping the user search the space of
+      possible actions they could take.
 
 I think a lot of these goals have been might quite thoroughly. Some are more
 ambiguous - is the language easy to use? Does it really feel like geometry? I
