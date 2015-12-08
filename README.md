@@ -8,7 +8,7 @@
 To run the project do
 
 ```
-sbt 'runMain construct.input.ConstructGUI'
+sbt 'runMain construct.ConstructGREPL'
 ```
 
 Then try
@@ -19,7 +19,7 @@ let C1 = circle(A, B)
 :s circle
 let C2 = 0
 :s intersection
-let (D, E) = intersection(C1, C2)
+let D, E = intersection(C1, C2)
 let P = line(D, E)
 let Q = segment(A, B)
 let I = intersection(P, Q)
@@ -28,7 +28,7 @@ let I = intersection(P, Q)
 One can also use the whole-file processor with:
 
 ```
-sbt 'runMain construct.input.ConstructC example.con'
+sbt 'runMain construct.ConstructC example.con'
 ```
 
 # DSL projects
