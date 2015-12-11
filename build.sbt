@@ -4,6 +4,8 @@ version := "0.1"
 
 scalaVersion := "2.11.7"
 
+scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
+
 libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "1.0.1"
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value

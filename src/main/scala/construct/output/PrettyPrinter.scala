@@ -46,6 +46,8 @@ object PrettyPrinter {
     e match {
       case FnApp(fn, args) => print(fn) + "(" + (args map { print(_) } mkString c) + ")"
       case Exactly(id) => print(id)
+      case SetLit(items) => "{" + (items map {print(_)} mkString c) + "}"
+      case Difference(left, right) => print(left) + " - " + print(right)
     }
   def printReturns(rets: List[Identifier]) : String =
     "return" + s + (rets map { print(_) } mkString c) + n

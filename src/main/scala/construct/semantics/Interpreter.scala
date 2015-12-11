@@ -47,24 +47,24 @@ class ConstructInterpreter {
   def checkFresh(id: Identifier) =
     if (vars.keys exists {_==id} ) throw new UsedIdentifier(id.name)
 
-  def lookupPoint(id: Identifier) : Point = {
-    val v = vars get id getOrElse {throw new UnknownIdentifier("point",id)}
-    v.asPoint
-  }
+  def lookupPoint(id: Identifier) : Point =
+    (vars get id getOrElse {throw new UnknownIdentifier("point",id)}).asPoint
 
   def lookupConstructor(id: Identifier) : Construction =
-    constructors get id getOrElse
-      {throw new UnknownIdentifier("constructor",id)}
+    constructors get id getOrElse {throw new UnknownIdentifier("constructor",id)}
 
   def lookupConstruction(id: Identifier) : Construction =
-    constructions get id getOrElse
-      {throw new UnknownIdentifier("construction",id)}
+    constructions get id getOrElse {throw new UnknownIdentifier("construction",id)}
 
   def lookupVar(id: Identifier) : Var =
     vars get id getOrElse {throw new UnknownIdentifier("",id)}
 
   def lookupLocus(id: Identifier) : Locus =
     lookupVar(id).asLocus
+
+  def mkProduct(params: List[Var]) : Product =
+    Product(params, params.map{_.asLocus}.reduce{_ union _})
+
 
   def run(c: Construction,
           items: Iterable[Item],
@@ -76,7 +76,7 @@ class ConstructInterpreter {
     val vars = outs map {lookupVar(_)}
     if (vars.length > 1) {
       val loci = vars map {_.asLocus}
-      val locus = loci.fold(Union(Set())){ _ union _ }
+      val locus = loci reduce {_ union _}
       Product(vars, locus)
     }
     else if (vars.length == 1) vars(0)
@@ -123,6 +123,7 @@ class ConstructInterpreter {
 
   def intersection(v1: Var, v2: Var) : Var = {
     if (v1 == v2) throw new ConstructError("Cannot intersection a locus with itself")
+    println(s"Intersection result from $v1 $v2 is ${Basic(v1.asLocus intersect v2.asLocus)}")
     Basic(v1.asLocus intersect v2.asLocus)
   }
 
@@ -229,6 +230,26 @@ class ConstructInterpreter {
     expr match {
       case fn_app: FnApp => fn_evaluate(fn_app)
       case Exactly(id) => lookupVar(id)
+      case SetLit(exprs) => mkProduct(exprs map evaluate)
+      case Difference(left, right) => difference(evaluate(left), evaluate(right))
+    }
+  }
+
+  def difference(left: Var, right: Var) : Var = {
+    def mkVar(vs: List[Var]) : Var =
+      vs match {
+        case List() => Basic(Union(Set()))
+        case List(x) => x
+        case xs => mkProduct(xs)
+      }
+    (left, right) match {
+      case (Product(left_vs, _), Product(right_vs, _)) =>
+        mkVar(left_vs filter {v => !(right_vs contains v)})
+      case (left, Basic(Union(right_loci))) =>
+        difference(left, mkProduct(right_loci.toList map {Basic(_)}))
+      case (Basic(Union(left_loci)), right) =>
+        difference(mkProduct(left_loci.toList map {Basic(_)}), right)
+      case (v, _) => v
     }
   }
 
@@ -252,7 +273,8 @@ class ConstructInterpreter {
     }
   }
 
-  def filter_query_results(results: Iterable[(Option[Var],Expr)]) : Iterable[(Var,Expr)] = {
+  def filter_query_results(results: Iterable[(Option[Var],Expr)])
+  : Iterable[(Var,Expr)] = {
     val extantResults = results collect { case (Some(objs),call) => (objs, call) }
     val nonEmptyResults = extantResults filter {
       case (Basic(Union(loci)),_) => ! loci.isEmpty
@@ -264,8 +286,26 @@ class ConstructInterpreter {
     IterTools.uniqueBy(newResults, { x: (Var, Expr) => x._1 })
   }
 
-  def execute(statement: Statement) = {
-    val Statement(pattern, expr) = statement
+  def executeStatement(statement: Statement) = {
+    statement match {
+      case assignment: Assignment => execute(assignment)
+      case Match(expr, cases) => {
+        val v = evaluate(expr)
+        var done
+        for (Case(pattern, statements) <- cases) {
+          try {
+            pattern_match(pattern, v)
+          }
+          catch {
+            case _: ConstructError => {}
+          }
+          finally {
+        
+
+  }
+
+  def execute(assignment: Assignment) = {
+    val Assignment(pattern, expr) = assignment
     pattern_match(pattern, evaluate(expr))
   }
 
@@ -309,7 +349,7 @@ class ConstructInterpreter {
 
   override def toString : String =
     "Variables:\n" +
-    (vars map {case (k,v) => k.toString + " => " + " ... "} mkString "\n") +
+    (vars map {case (k,v) => k.toString + " => " + v.toString} mkString "\n") +
     "\nConstructions:\n" +
     (constructions map {case (k,v) => k.toString + " => " + " ... "} mkString "\n") +
     "\nConstructors:\n" +
