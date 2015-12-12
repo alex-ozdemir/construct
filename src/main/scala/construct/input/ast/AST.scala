@@ -19,11 +19,7 @@ case class Construction(val name: Identifier,
 case class Shape(val con: Construction) extends Item
 
 // let <Pattern> = <Expr>
-sealed abstract class Statement
-case class Assignment(val pattern: Pattern, val expr: Expr) extends Statement
-case class Match(val expr: Expr, val cases: List[Case]) extends Statement
-
-case class Case(val pattern: Pattern, val statements: List[Statement])
+case class Statement(val pattern: Pattern, val expr: Expr)
 
 sealed abstract class Pattern
 case class Destructor(val ty: Identifier, val contents: List[Pattern]) extends Pattern

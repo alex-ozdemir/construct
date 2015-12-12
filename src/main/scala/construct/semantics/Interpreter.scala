@@ -123,7 +123,6 @@ class ConstructInterpreter {
 
   def intersection(v1: Var, v2: Var) : Var = {
     if (v1 == v2) throw new ConstructError("Cannot intersection a locus with itself")
-    println(s"Intersection result from $v1 $v2 is ${Basic(v1.asLocus intersect v2.asLocus)}")
     Basic(v1.asLocus intersect v2.asLocus)
   }
 
@@ -286,26 +285,8 @@ class ConstructInterpreter {
     IterTools.uniqueBy(newResults, { x: (Var, Expr) => x._1 })
   }
 
-  def executeStatement(statement: Statement) = {
-    statement match {
-      case assignment: Assignment => execute(assignment)
-      case Match(expr, cases) => {
-        val v = evaluate(expr)
-        var done
-        for (Case(pattern, statements) <- cases) {
-          try {
-            pattern_match(pattern, v)
-          }
-          catch {
-            case _: ConstructError => {}
-          }
-          finally {
-        
-
-  }
-
-  def execute(assignment: Assignment) = {
-    val Assignment(pattern, expr) = assignment
+  def execute(assignment: Statement) = {
+    val Statement(pattern, expr) = assignment
     pattern_match(pattern, evaluate(expr))
   }
 

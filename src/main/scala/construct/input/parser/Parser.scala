@@ -91,13 +91,8 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
       | failure("Problem parsing the given points for the construction") )
 
   lazy val statement: PackratParser[Statement] =
-    (   pattern_plus~expr ^^ {case pattern~expr => Assignment(pattern, expr)}
-      | "consider"~>expr~rep1sep(case1,seps)<~seps~"endcase" ^^ {case e~cases => Match(e, cases)}
+    (   pattern_plus~expr ^^ {case pattern~expr => Statement(pattern, expr)}
       | failure("Problem parsing statement") )
-
-  lazy val case1: PackratParser[Case] =
-    "case"~>pattern_plus~":"~seps~rep1sep(statement,seps) ^^
-      {case p~":"~_~sts => Case(p, sts)}
 
   lazy val expr: PackratParser[Expr] =
     (   expr~"-"~expr                  ^^ {case e1~"-"~e2 => Difference(e1, e2)}
