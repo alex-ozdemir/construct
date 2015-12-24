@@ -22,15 +22,16 @@ import construct.input.parser.ConstructParser
 import construct.input.loader.Loader
 import construct.input.ast._
 import construct.semantics.ConstructInterpreter
-import construct.output.{TkzEuclide,PNG}
+import construct.output.{TkzEuclide,PNG,XPiler}
 
 object ConstructC extends App {
   var interpreter = new ConstructInterpreter
   val filename = if (args.length > 0) {args(0)}
                  else {throw new Error("Must provide file to interpret")}
-  val (constructions, main_option) = Loader(filename)
+  val (item_map, main_option) = Loader(filename)
   val main = main_option getOrElse { throw new Error(s"No main constrution in $filename") }
-  interpreter.run(main, constructions.values.toList)
+  interpreter.run(main, item_map.values.toList)
   println(TkzEuclide.render(interpreter.get_drawables))
-  println(PNG.dump(interpreter.get_drawables.toList, filename + ".png"))
+  PNG.dump(interpreter.get_drawables.toList, filename + ".png")
+  println(XPiler.asDoc(main, item_map.values))
 }

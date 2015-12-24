@@ -3,9 +3,9 @@ package construct.output
 import construct.engine._
 import scala.collection.mutable.HashMap
 
-case class Id(name: String)
 
 class Draw {
+  case class Id(name: String)
   var lastId = -1
   val idPrefix = "tmp"
 

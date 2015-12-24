@@ -1,7 +1,7 @@
 " Vim syntax file
 " Language: Construct
 " Maintainer: Alex Ozdemir <aozdemir@hmc.edu>
-" Latest Revision: 6 December 2015
+" Latest Revision: 12 December 2015
 
 if exists("b:current_syntax")
     finish
@@ -11,7 +11,7 @@ endif
 syn keyword constructInclude include nextgroup=constructPath skipwhite
 syn keyword constructKeywords let given return
 syn keyword constructHeader construction shape
-syn keyword constructBuiltinTypes point
+syn keyword constructBuiltinTypes point points
 syn keyword constructBuiltinTypes line ray circle segment
 syn keyword constructBuiltinFns intersection new
 

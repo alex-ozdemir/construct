@@ -38,3 +38,11 @@ let am = segment(aM, A)
 let bm = segment(bM, B)
 let center = intersection(am, bm)
 return center
+
+construction triangle_orthocenter
+given triangle T
+let triangle(A, B, C) = T
+let aM = perpendicular_bisect(B, C)
+let bM = perpendicular_bisect(A, C)
+let I = intersection(aM, bM)
+return I

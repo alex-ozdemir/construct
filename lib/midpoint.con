@@ -8,3 +8,10 @@ let q = line(A, B)
 let M = intersection(p, q)
 return M
 
+construction perpedicular_bisect
+given point A, point B
+let C1 = circle(A, B)
+let C2 = circle(B, A)
+let D, E = intersection(D, E)
+let L = line(D, E)
+return L
