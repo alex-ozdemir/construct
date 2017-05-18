@@ -222,29 +222,29 @@ object PNG {
     drawer.get
   }
 
-  def getTmp(perm: List[Drawable], tmp: List[Drawable]) : BufferedImage = {
+  def getTmp(perm: List[Drawable], tmp: List[List[Drawable]]) : BufferedImage = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
-    val bounds = boundingBox(perm) + boundingBox(tmp)
+    val bounds = (tmp map boundingBox).foldLeft(boundingBox(perm)) (_ + _)
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
     perm foreach {drawer.drawPerm(_)}
-    tmp zip (tmpColors map {c => Scheme(c, c)}) foreach {case (drawable, scheme) => drawer.draw(drawable, scheme)}
+    tmp zip (tmpColors map {c => Scheme(c, c)}) foreach {case (drawables, scheme) => drawables foreach {drawable => drawer.draw(drawable, scheme)} }
     drawer.get
   }
 
-  def dumpTmp(perm: List[Drawable], tmp: List[Drawable], file: String) = {
+  def dumpTmp(perm: List[Drawable], tmp: List[List[Drawable]], file: String) = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
-    val bounds = boundingBox(perm) + boundingBox(tmp)
+    val bounds = (tmp map boundingBox).foldLeft(boundingBox(perm)) (_ + _)
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
     perm foreach {drawer.drawPerm(_)}
-    tmp zip (tmpColors map {c => Scheme(c, c)}) foreach {case (drawable, scheme) => drawer.draw(drawable, scheme)}
+    tmp zip (tmpColors map {c => Scheme(c, c)}) foreach {case (drawables, scheme) => drawables foreach {drawable => drawer.draw(drawable, scheme)} }
     drawer.write(file)
   }
 }

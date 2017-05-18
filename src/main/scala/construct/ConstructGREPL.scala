@@ -124,8 +124,9 @@ object ConstructGREPL extends EvalLoop with App {
   def draw = PNG.dump(interpreter.get_drawables.toList, outputFile)
 
   def drawTmp = {
-    val tmp_drawables = suggestions flatMap {
-      case (drawables, _, _) => drawables
+    println(suggestions)
+    val tmp_drawables = suggestions map {
+      case (drawables, _, _) => drawables.toList
     }
     PNG.dumpTmp(interpreter.get_drawables.toList, tmp_drawables, outputFile)
   }
@@ -156,7 +157,7 @@ object ConstructGREPL extends EvalLoop with App {
     val splitCommand = command.split(" +")
     if (splitCommand.length > 1) {
       suggestions = interpreter.query(Identifier(splitCommand(1))).toList
-      val tmp_drawables = suggestions flatMap {
+      val tmp_drawables = suggestions map {
         case (drawables, _, _) => drawables
       }
       ui.setImage(PNG.getTmp(interpreter.get_drawables.toList, tmp_drawables))

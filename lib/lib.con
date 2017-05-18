@@ -3,3 +3,8 @@ include parallel.con
 include length.con
 include triangle.con
 
+shape angle
+given point A, point B, point C
+let R = ray(B, A)
+let S = ray(B, C)
+return R, S

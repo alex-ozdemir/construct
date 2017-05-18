@@ -2,6 +2,7 @@ construction mid
 given point A, point B
 let C = bisect(A, B)
 return
+
 construction bisect
 given point A, point B
 let C1 = circle(A, B)
