@@ -30,7 +30,7 @@
 package construct
 
 import java.awt.image.BufferedImage
-import java.io.PrintWriter
+import java.io.{FileWriter,PrintWriter}
 
 import scala.tools.nsc.EvalLoop
 import scala.swing._
@@ -153,6 +153,7 @@ object ConstructGREPL extends EvalLoop with App {
   // ============================================= //
 
   def reset() = {
+    nextLetter = 'A'
     interpreter = new ConstructInterpreter
     programStore.reset()
   }
@@ -184,7 +185,7 @@ object ConstructGREPL extends EvalLoop with App {
       val outputFile = splitCommand(2)
       val name = splitCommand(1)
       val programStr = PrettyPrinter.print(programStore.getProgram(name))
-      new PrintWriter(outputFile) { write(programStr); close }
+      new PrintWriter(new FileWriter(outputFile, true)) { write(programStr); close }
     }
     else println(":write syntax not recognized")
   }
