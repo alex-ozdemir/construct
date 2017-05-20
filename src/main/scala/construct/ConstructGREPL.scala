@@ -53,6 +53,9 @@ class ProgramStore {
   val returns = new MutableList[Identifier]()
   def addStatement(s: Statement) = statements += s
   def undoStatement() = statements = statements dropRight 1
+  def addParameter(param: Parameter) = {
+    parameters += param
+  }
   def setParameters(params: List[Parameter]) = {
     parameters.clear()
     parameters ++= params
@@ -83,14 +86,47 @@ object ConstructGREPL extends EvalLoop with App {
   // Initialize semantic systems
   val programStore = new ProgramStore
   var interpreter = new ConstructInterpreter
-  var firstStatement = true
   var suggestions = List[(List[Drawable],Expr,String)]()
 
+  var nextLetter = 'A'
+
   // Initialize UI
-  val ui = new UI
+  val ui = new UI(pt => {
+    pixelsToPoints(pt) match {
+      case Some(location) => {
+        var potentialIdent: Identifier = null;
+        val ty = Identifier("point")
+
+        do {
+          potentialIdent = Identifier(nextLetter.toString)
+          nextLetter = (nextLetter + 1).toChar
+        } while (interpreter.vars.contains(potentialIdent))
+
+        val param = Parameter(potentialIdent, ty)
+        addGiven(param, Some(semantics.Basic(location)))
+        drawToUI()
+      }
+      case None => { }
+    }
+  })
+  var pixelsToPoints: swing.Point => Option[engine.Point] = {
+    pt => Some(Point(0.0, 0.0))
+  }
   var redraw = true
   ui.visible = true
-  ui.setImage(PNG.get(interpreter.get_drawables.toList))
+  drawToUI()
+
+  def printHelp() = {
+    val message = """Metacommands:
+  :h[elp]                         Print this message.
+  :r[eset]                        Empty the canvas.
+  :d[raw]  [file]                 Draw canvas to `file`. Optionally set output file to `file`.
+  :u[ndo]                         Undo last action.
+  :?                              Print interpreter state.
+  :w[rite] [construction] [file]  Name the session `construction` and write to `file`.
+  :s[uggest] [construction]       Suggest how `construction` might be used."""
+    println(message)
+  }
 
   // Processes a metacommand
   def processMetaCommand(command: String) =
@@ -109,6 +145,7 @@ object ConstructGREPL extends EvalLoop with App {
     else if (command startsWith "?") println(interpreter)
     else if ((command startsWith "write") || (command startsWith "w")) write(command)
     else if ((command startsWith "suggest") || (command startsWith "s")) suggest(command)
+    else if ((command startsWith "help") || (command startsWith "h")) printHelp()
     else println(s"Unrecognized metacommand :$command")
 
   // ============================================= //
@@ -118,7 +155,6 @@ object ConstructGREPL extends EvalLoop with App {
   def reset() = {
     interpreter = new ConstructInterpreter
     programStore.reset()
-    firstStatement = true
   }
 
   def draw = PNG.dump(interpreter.get_drawables.toList, outputFile)
@@ -134,7 +170,7 @@ object ConstructGREPL extends EvalLoop with App {
   def undo() = {
     programStore.undoStatement()
     interpreter = new ConstructInterpreter
-    interpreter.inputs(programStore.parameters, None)
+    interpreter.set_inputs(programStore.parameters, None)
     programStore.includes foreach {case Path(p) => {
       val (item_map, cons) = Loader(p)
       interpreter.add_items(item_map.values.toList)
@@ -213,14 +249,15 @@ object ConstructGREPL extends EvalLoop with App {
       }
     }
 
+  def addGiven(given: Parameter, v: Option[semantics.Var]) = {
+    interpreter.add_input(given, v)
+    programStore.addParameter(given)
+  }
+
   def processGiven(line: String) = {
-    firstStatement = false
     printIfError {
       ConstructParser.parseGivens(line) map {
-        givens => {
-          interpreter.inputs(givens, None)
-          programStore.setParameters(givens)
-        }
+        givens => givens foreach { param => addGiven(param, None) }
       }
     }
   }
@@ -235,6 +272,14 @@ object ConstructGREPL extends EvalLoop with App {
       }
     }
 
+  def drawToUI(): Unit = {
+    val (image, revereseHomography) = PNG.get(interpreter.get_drawables.toList)
+    ui.setImage(image)
+    pixelsToPoints = {
+      pt => Some(revereseHomography(Point(pt.x, pt.y)))
+    }
+  }
+
 
   // =============== //
   // The actual loop //
@@ -247,9 +292,9 @@ object ConstructGREPL extends EvalLoop with App {
       else if (ConstructParser.parseSuggestionTake(line).successful) takeSuggestion(line)
       else if (line startsWith "include") processInclude(line)
       else if (line startsWith "return") processReturn(line)
-      else if (firstStatement) processGiven(line)
+      else if (line startsWith "given") processGiven(line)
       else processStatement(line)
-      if (redraw) ui.setImage(PNG.get(interpreter.get_drawables.toList))
+      if (redraw) drawToUI()
     }
     catch {
       case e: ConstructError => println(e)
@@ -276,7 +321,7 @@ class ImagePanel extends Panel
   }
 }
 
-class UI extends MainFrame {
+class UI(onclick: java.awt.Point => Unit) extends MainFrame {
   title = "Construct GREPL"
   preferredSize = new Dimension(500, 500)
   private val image = new ImagePanel()
@@ -284,5 +329,11 @@ class UI extends MainFrame {
   def setImage(img: BufferedImage) = {
     image.setImage(img)
     repaint()
+  }
+  listenTo(image.mouse.clicks)
+  reactions += {
+    case event.MouseClicked(_, p, _, _, _) => {
+      onclick(p)
+    }
   }
 }

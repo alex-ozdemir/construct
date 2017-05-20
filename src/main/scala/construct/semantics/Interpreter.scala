@@ -40,7 +40,7 @@ class ConstructInterpreter {
   val constructions = new HashMap[Identifier,Construction]
   val constructors = new HashMap[Identifier,Construction]
   val vars = new HashMap[Identifier,Var]
-  val def_points = Queue(Point(0.0,0.0),Point(1.0,0.0),Point(1.0,1.0))
+  val def_points = Queue(Point(0.0,0.0),Point(1.0,0.0),Point(1.7,1.0), Point(2.0, 0.5))
   private val builtins =
     List("circle", "line", "segment", "ray", "intersection", "new") map {Identifier(_)}
 
@@ -70,7 +70,7 @@ class ConstructInterpreter {
           items: Iterable[Item],
           in_vars: Option[List[Var]] = None): Var = {
     val Construction(_, params, statements, outs) = c
-    inputs(params, in_vars)
+    set_inputs(params, in_vars)
     add_items(items)
     statements foreach {execute(_)}
     val vars = outs map {lookupVar(_)}
@@ -88,22 +88,28 @@ class ConstructInterpreter {
     constructors  ++= (items collect {case Shape(c)        => (c.name, c)})
   }
 
-  def inputs(params: Iterable[Parameter], in_vars: Option[List[Var]]) = {
-    in_vars match {
-      case None => params foreach {case Parameter(id, ty) => {
-        if (ty != Identifier("point"))
-          throw new ConstructError(s"Implicit givens must be of type <point>, but ${id.name} is of type ${ty.name}")
-        val pt = def_points.dequeue()
-        vars += (id -> Basic(pt))
-      }}
-      case Some(ins_list) => {
-        val assignments = params zip ins_list map {
-          case (Parameter(name, ty), v) => {
-            if (getTy(v) != ty) throw new ConstructError(s"Formal parameter has type $ty, but actual type was ${getTy(v)}.")
-            (name, v)
-          }
+  def add_input(param: Parameter, actual_var: Option[Var]) = {
+    param match { case Parameter(id, ty) => {
+      actual_var match {
+        case None => {
+          if (ty != Identifier("point"))
+            throw new ConstructError(s"Implicit givens must be of type <point>, but ${id.name} is of type ${ty.name}")
+          val pt = def_points.dequeue()
+          vars += (id -> Basic(pt))
         }
-        vars ++= assignments
+        case Some(v) => {
+          if (getTy(v) != ty) throw new ConstructError(s"Formal parameter has type $ty, but actual type was ${getTy(v)}.")
+          vars += ((id, v))
+        }
+      }
+    }}
+  }
+
+  def set_inputs(params: Iterable[Parameter], in_vars: Option[List[Var]]) = {
+    in_vars match {
+      case None => params foreach {add_input(_, None)}
+      case Some(ins_list) => params zip ins_list map {
+        case (param, in) => add_input(param, Some(in))
       }
     }
   }

@@ -147,7 +147,10 @@ case class Box(x1: Double, y1: Double, x2: Double, y2: Double) {
   def fill(that: Box) : Box = {
     val x_ratio = (that.x2 - that.x1) / (this.x2 - this.x1)
     val y_ratio = (that.y2 - that.y1) / (this.y2 - this.y1)
-    val ratio = math.min(x_ratio, y_ratio)
+    var ratio = math.min(x_ratio, y_ratio)
+    if (ratio == 0 || ratio.isNaN() || ratio.isInfinite()) {
+      ratio = 1
+    }
     val ul_new = min_vec * ratio + that.center
     val br_new = max_vec * ratio + that.center
     Box(ul_new.x, ul_new.y, br_new.x, br_new.y)
@@ -181,7 +184,7 @@ object PNG {
   }
 
   def boundingBox(drawables: List[Drawable]) : Box = {
-    drawables.map{box(_)}.foldLeft(trivialBox)(_+_)
+    drawables.map{box(_)}.foldLeft(trivialBox)(_+_) + Box(1, 1, -1, -1)
   }
 
   def homography(domain: Box, image: Box) : Point => Point = {
@@ -189,8 +192,8 @@ object PNG {
     val x_in = domain.x2 - domain.x1
     val y_out = image.y2 - image.y1
     val y_in = domain.y2 - domain.y1
-    val x_ratio = if (x_in === 0) 1 else x_out / x_in
-    val y_ratio = if (y_in === 0) 1 else y_out / y_in
+    var x_ratio = if (x_in === 0) 1 else x_out / x_in
+    var y_ratio = if (y_in === 0) 1 else y_out / y_in
     return { x: Point => {
       val v = x - domain.center
       val v_new = Point(v.x * x_ratio, v.y * y_ratio)
@@ -210,16 +213,24 @@ object PNG {
     drawer.write(file)
   }
 
-  def get(drawables: List[Drawable]) : BufferedImage = {
+  /** Draw the `drawables`.
+   *
+   *  Returns:
+   *    * `BufferedImage`: the drawing
+   *    * `Point => Point`: A mapping from pixels to the cartesian coordinate
+   *       system of the `drawables`.
+   */
+  def get(drawables: List[Drawable]) : (BufferedImage, Point => Point) = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
     val bounds = boundingBox(drawables)
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
+    val revereseHomography = homography(targetBox, bounds)
     val drawer = new Drawer(size, trans)
     drawables foreach {drawer.drawPerm(_)}
-    drawer.get
+    (drawer.get, revereseHomography)
   }
 
   def getTmp(perm: List[Drawable], tmp: List[List[Drawable]]) : BufferedImage = {
