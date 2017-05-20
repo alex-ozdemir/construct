@@ -14,7 +14,7 @@ sbt 'runMain construct.ConstructGREPL'
 Then try
 
 ```
-given point A, point B
+// Click on two locations to get points A and B
 let C1 = circle(A, B)
 :s circle
 let C2 = 0

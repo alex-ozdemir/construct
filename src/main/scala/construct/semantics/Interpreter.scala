@@ -323,6 +323,34 @@ class ConstructInterpreter {
         }
         pats zip vars.toList map Function.tupled(pattern_match _ )
       }
+      case (Destructor(Identifier("circle"), pats), Basic(Circle(c, e))) => {
+        if (pats.size != 2) {
+          throw new ConstructError(s"Tried to bind a circle to the pattern ${Tuple(pats)} with ${pats.length} items")
+        }
+        pattern_match(pats.head, Basic(c))
+        pattern_match(pats.tail.head, Basic(e))
+      }
+      case (Destructor(Identifier("line"), pats), Basic(Line(c, e))) => {
+        if (pats.size != 2) {
+          throw new ConstructError(s"Tried to bind a line to the pattern ${Tuple(pats)} with ${pats.length} items")
+        }
+        pattern_match(pats.head, Basic(c))
+        pattern_match(pats.tail.head, Basic(e))
+      }
+      case (Destructor(Identifier("ray"), pats), Basic(Ray(c, e))) => {
+        if (pats.size != 2) {
+          throw new ConstructError(s"Tried to bind a ray to the pattern ${Tuple(pats)} with ${pats.length} items")
+        }
+        pattern_match(pats.head, Basic(c))
+        pattern_match(pats.tail.head, Basic(e))
+      }
+      case (Destructor(Identifier("segment"), pats), Basic(Segment(c, e))) => {
+        if (pats.size != 2) {
+          throw new ConstructError(s"Tried to bind a segment to the pattern ${Tuple(pats)} with ${pats.length} items")
+        }
+        pattern_match(pats.head, Basic(c))
+        pattern_match(pats.tail.head, Basic(e))
+      }
       case (Destructor(ty1, pats), Custom(ty2, vars, _)) => {
         if (ty1 != ty2) throw new TypeError(v, ty1.name)
         if (pats.length != vars.toList.length) {

@@ -20,6 +20,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
                            Segment(Point(size.x,size.y), Point(0,size.y)),
                            Segment(Point(0,size.y),      Point(0, 0))))
   val graphics = canvas.createGraphics()
+  val font = new Font("Serif", Font.ITALIC, 20)
   val perm = Scheme(Color.GRAY, Color.BLACK)
 
   {
@@ -54,8 +55,8 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
       graphics.setColor(scheme.draw)
       graphics.fill(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r))
       graphics.setColor(scheme.label)
-      graphics.setFont(new Font("Batang", Font.PLAIN, 20))
-      graphics.drawString(name, (x + r).toFloat, (y + r).toFloat)
+      graphics.setFont(font)
+      graphics.drawString(name, (x + r).toFloat, (y + 2 * r).toFloat)
     }
   }
 
@@ -71,7 +72,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     graphics.setStroke(new BasicStroke(thick))
     graphics.draw(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r))
     graphics.setColor(scheme.label)
-    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.setFont(font)
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
@@ -85,7 +86,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     graphics.setStroke(new BasicStroke(thick))
     graphics.drawLine(x1.toInt, y1.toInt, x2.toInt, y2.toInt)
     graphics.setColor(scheme.label)
-    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.setFont(font)
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
@@ -100,7 +101,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     graphics.setStroke(new BasicStroke(thick))
     graphics.drawLine(x1.toInt, y1.toInt, x3.toInt, y3.toInt)
     graphics.setColor(scheme.label)
-    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.setFont(font)
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
@@ -115,7 +116,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     graphics.setStroke(new BasicStroke(thick))
     graphics.drawLine(x4.toInt, y4.toInt, x3.toInt, y3.toInt)
     graphics.setColor(scheme.label)
-    graphics.setFont(new Font("Batang", Font.PLAIN, 20))
+    graphics.setFont(font)
     graphics.drawString(name, lx.toFloat, ly.toFloat)
   }
 
@@ -201,17 +202,8 @@ object PNG {
     }}
   }
 
-  def dump(drawables: List[Drawable], file: String) = {
-    val size = IPoint(500, 500)
-    val border = 25
-    val targetBounds = Box(border, border, size.x - border, size.y - border)
-    val bounds = boundingBox(drawables)
-    val targetBox = bounds fill targetBounds
-    val trans = homography(bounds, targetBox)
-    val drawer = new Drawer(size, trans)
-    drawables foreach {drawer.drawPerm(_)}
-    drawer.write(file)
-  }
+  def dump(drawables: List[Drawable], file: String) =
+    dumpTmp(drawables, List(), file)
 
   /** Draw the `drawables`.
    *
@@ -220,30 +212,22 @@ object PNG {
    *    * `Point => Point`: A mapping from pixels to the cartesian coordinate
    *       system of the `drawables`.
    */
-  def get(drawables: List[Drawable]) : (BufferedImage, Point => Point) = {
-    val size = IPoint(500, 500)
-    val border = 25
-    val targetBounds = Box(border, border, size.x - border, size.y - border)
-    val bounds = boundingBox(drawables)
-    val targetBox = bounds fill targetBounds
-    val trans = homography(bounds, targetBox)
-    val revereseHomography = homography(targetBox, bounds)
-    val drawer = new Drawer(size, trans)
-    drawables foreach {drawer.drawPerm(_)}
-    (drawer.get, revereseHomography)
-  }
+  def get(drawables: List[Drawable]) : (BufferedImage, Point => Point) =
+    getTmp(drawables, List())
 
-  def getTmp(perm: List[Drawable], tmp: List[List[Drawable]]) : BufferedImage = {
+  def getTmp(perm: List[Drawable], tmp: List[List[Drawable]])
+            : (BufferedImage, Point => Point) = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
     val bounds = (tmp map boundingBox).foldLeft(boundingBox(perm)) (_ + _)
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
+    val revereseHomography = homography(targetBox, bounds)
     val drawer = new Drawer(size, trans)
     perm foreach {drawer.drawPerm(_)}
     tmp zip (tmpColors map {c => Scheme(c, c)}) foreach {case (drawables, scheme) => drawables foreach {drawable => drawer.draw(drawable, scheme)} }
-    drawer.get
+    (drawer.get, revereseHomography)
   }
 
   def dumpTmp(perm: List[Drawable], tmp: List[List[Drawable]], file: String) = {

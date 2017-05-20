@@ -21,16 +21,34 @@ case class Shape(val con: Construction) extends Item
 // let <Pattern> = <Expr>
 case class Statement(val pattern: Pattern, val expr: Expr)
 
-sealed abstract class Pattern
-case class Destructor(val ty: Identifier, val contents: List[Pattern]) extends Pattern
-case class Id(val id: Identifier) extends Pattern
-case class Tuple(val contents: List[Pattern]) extends Pattern
+sealed abstract class Pattern {
+  def boundIdents: Set[Identifier]
+}
+case class Destructor(val ty: Identifier, val contents: List[Pattern]) extends Pattern {
+  def boundIdents: Set[Identifier] = (contents flatMap {_.boundIdents}).toSet
+}
+case class Id(val id: Identifier) extends Pattern {
+  def boundIdents: Set[Identifier] = Set(id)
+}
+case class Tuple(val contents: List[Pattern]) extends Pattern {
+  def boundIdents: Set[Identifier] = (contents flatMap {_.boundIdents}).toSet
+}
 
-sealed abstract class Expr
-case class FnApp(val fn: Identifier, val args: List[Expr]) extends Expr
-case class Difference(val left: Expr, val right: Expr) extends Expr
-case class SetLit(val items: List[Expr]) extends Expr
-case class Exactly(val id: Identifier) extends Expr
+sealed abstract class Expr {
+  def usedIdents: Set[Identifier]
+}
+case class FnApp(val fn: Identifier, val args: List[Expr]) extends Expr {
+  def usedIdents: Set[Identifier] = (args flatMap {_.usedIdents}).toSet
+}
+case class Difference(val left: Expr, val right: Expr) extends Expr {
+  def usedIdents: Set[Identifier] = (left.usedIdents | right.usedIdents).toSet
+}
+case class SetLit(val items: List[Expr]) extends Expr {
+  def usedIdents: Set[Identifier] = (items flatMap {_.usedIdents}).toSet
+}
+case class Exactly(val id: Identifier) extends Expr {
+  def usedIdents: Set[Identifier] = Set(id)
+}
 
 case class Identifier(val name: String)
 case class Parameter(val name: Identifier, val ty: Identifier)
