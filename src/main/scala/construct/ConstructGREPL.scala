@@ -31,7 +31,7 @@
 package construct
 
 import java.awt.image.BufferedImage
-import java.io.{FileWriter,PrintWriter}
+import java.io.{FileWriter, PrintWriter}
 
 import scala.tools.nsc.EvalLoop
 import scala.swing._
@@ -40,8 +40,8 @@ import scala.collection.mutable.MutableList
 import construct.input.parser.ConstructParser
 import construct.input.loader.Loader
 import construct.input.ast._
-import construct.semantics.{ConstructInterpreter,ConstructError}
-import construct.output.{Drawable,PNG,PrettyPrinter}
+import construct.semantics.{ConstructInterpreter, ConstructError}
+import construct.output.{Drawable, PNG, PrettyPrinter}
 import construct.engine._
 
 // A Program Store tracks the statements that the user has done so far
@@ -63,14 +63,17 @@ class ProgramStore {
     statements = statements dropRight 1
     interpreter = new ConstructInterpreter
     interpreter.set_inputs(parameters, None)
-    includes foreach { case Path(p) => {
-      val (item_map, cons) = Loader(p)
-      interpreter.add_items(item_map.values.toList)
-    } }
+    includes foreach {
+      case Path(p) => {
+        val (item_map, cons) = Loader(p)
+        interpreter.add_items(item_map.values.toList)
+      }
+    }
     statements foreach { interpreter.execute(_) }
   }
   def addPoint(name: Identifier, pt: engine.Point) = {
-    interpreter.add_input(Parameter(name, Identifier("point")), Some(semantics.Basic(pt)))
+    interpreter.add_input(Parameter(name, Identifier("point")),
+                          Some(semantics.Basic(pt)))
   }
   def setParameters(params: List[Parameter]) = {
     parameters.clear()
@@ -92,12 +95,13 @@ class ProgramStore {
     returns.clear()
     interpreter = new ConstructInterpreter
   }
+
   /**
-   * Tries to extract a program. Might error out because
-   *  * There are no stated returns
-   *  * There are dependencies on undeclared parameters
-   */
-  def getProgram(name: String) : Either[String,Program] = {
+    * Tries to extract a program. Might error out because
+    *  * There are no stated returns
+    *  * There are dependencies on undeclared parameters
+    */
+  def getProgram(name: String): Either[String, Program] = {
     if (returns.isEmpty) return Left("There are no returns")
 
     // We verify that the returns depend only on the declared parameters
@@ -105,7 +109,7 @@ class ProgramStore {
     var liveIds = returns.toSet &~ paramIdents
     var neededStatements: List[Statement] = List()
     statements.reverseIterator foreach {
-      case s@Statement(pattern, expression) => {
+      case s @ Statement(pattern, expression) => {
         if ((liveIds & pattern.boundIdents).size > 0) {
           liveIds = ((liveIds &~ pattern.boundIdents) | expression.usedIdents) &~ paramIdents
           neededStatements = s :: neededStatements
@@ -115,14 +119,13 @@ class ProgramStore {
     if (liveIds.size > 0) {
       val sing_return = returns.size == 1
       val sing_live = liveIds.size == 1
-      Left(f"The return${if (sing_return) "" else "s"}, ${
-        PrettyPrinter.printIds(returns)
-      }, ${if (sing_return) "is" else "are"} dependent on ${
-        PrettyPrinter.printIds(liveIds)
-      }, which ${if (sing_live) "is" else "are"} not given")
+      Left(f"The return${if (sing_return) "" else "s"}, ${PrettyPrinter
+        .printIds(returns)}, ${if (sing_return) "is" else "are"} dependent on ${PrettyPrinter
+        .printIds(liveIds)}, which ${if (sing_live) "is" else "are"} not given")
     } else {
       val id = Identifier(name)
-      val cons = Construction(id, parameters.toList, neededStatements, returns.toList)
+      val cons =
+        Construction(id, parameters.toList, neededStatements, returns.toList)
       Right(Program(includes.toList, List(cons)))
     }
   }
@@ -136,7 +139,7 @@ object ConstructGREPL extends EvalLoop with App {
   // Initialize semantic systems
   val programStore = new ProgramStore
   var interpreter = new ConstructInterpreter
-  var suggestions = List[(List[Drawable],Expr,String)]()
+  var suggestions = List[(List[Drawable], Expr, String)]()
 
   var nextLetter = 'A'
   var clearSuggestions = false;
@@ -156,7 +159,7 @@ object ConstructGREPL extends EvalLoop with App {
         programStore.addPoint(potentialIdent, location)
         drawToUI()
       }
-      case None => { }
+      case None => {}
     }
   })
 
@@ -164,15 +167,16 @@ object ConstructGREPL extends EvalLoop with App {
     case (drawables, _, _) => drawables.toList
   }
 
-  var pixelsToPoints: swing.Point => Option[engine.Point] = {
-    pt => Some(Point(0.0, 0.0))
+  var pixelsToPoints: swing.Point => Option[engine.Point] = { pt =>
+    Some(Point(0.0, 0.0))
   }
 
   ui.visible = true
   drawToUI()
 
   def printHelp() = {
-    val message = """Metacommands:
+    val message =
+      """Metacommands:
   :h[elp]                         Print this message.
   :r[eset]                        Empty the canvas.
   :d[raw] [<file>]                Draw canvas to `file`.
@@ -193,12 +197,14 @@ object ConstructGREPL extends EvalLoop with App {
       val splitCommand = command.split(" +")
       if (splitCommand.length > 1) outputFile = splitCommand(1)
       draw()
-    }
-    else if ((command startsWith "undo") || (command startsWith "u")) undo()
+    } else if ((command startsWith "undo") || (command startsWith "u")) undo()
     else if (command startsWith "?") println(programStore.interpreter)
-    else if ((command startsWith "write") || (command startsWith "w")) write(command)
-    else if ((command startsWith "suggest") || (command startsWith "s")) suggest(command)
-    else if ((command startsWith "help") || (command startsWith "h")) printHelp()
+    else if ((command startsWith "write") || (command startsWith "w"))
+      write(command)
+    else if ((command startsWith "suggest") || (command startsWith "s"))
+      suggest(command)
+    else if ((command startsWith "help") || (command startsWith "h"))
+      printHelp()
     else println(s"Unrecognized metacommand :$command")
 
   // ============================================= //
@@ -210,7 +216,8 @@ object ConstructGREPL extends EvalLoop with App {
     programStore.reset()
   }
 
-  def draw() = PNG.dump(programStore.interpreter.get_drawables.toList, outputFile)
+  def draw() =
+    PNG.dump(programStore.interpreter.get_drawables.toList, outputFile)
 
   def undo() = programStore.undoStatement()
 
@@ -223,17 +230,19 @@ object ConstructGREPL extends EvalLoop with App {
         case Left(error) => println(f"Error: $error")
         case Right(pgm) => {
           val programStr = PrettyPrinter.print(pgm)
-          new PrintWriter(new FileWriter(outputFile, true)) { write(programStr); close }
+          new PrintWriter(new FileWriter(outputFile, true)) {
+            write(programStr); close
+          }
         }
       }
-    }
-    else println(":write syntax not recognized")
+    } else println(":write syntax not recognized")
   }
 
   def suggest(command: String) = {
     val splitCommand = command.split(" +")
     if (splitCommand.length > 1) {
-      suggestions = programStore.interpreter.query(Identifier(splitCommand(1))).toList
+      suggestions =
+        programStore.interpreter.query(Identifier(splitCommand(1))).toList
       clearSuggestions = false;
     }
   }
@@ -242,17 +251,22 @@ object ConstructGREPL extends EvalLoop with App {
   // Helper functions for processing Construct language //
   // ================================================== //
 
-  def printIfError[T](result: ConstructParser.ParseResult[T]) =
+  def printIfParseError[T](result: ConstructParser.ParseResult[T]) =
     if (!result.successful) println(result)
 
   def takeSuggestion(line: String) =
-    printIfError {
+    printIfParseError {
       ConstructParser.parseSuggestionTake(line) map {
         case (pattern, sug_id) => {
-          val draw_expr = suggestions find { case (_, _, name) => name == sug_id }
-          suggestions = suggestions.filter { case (_, _, name) => name != sug_id }
+          val draw_expr = suggestions find {
+            case (_, _, name) => name == sug_id
+          }
+          suggestions = suggestions.filter {
+            case (_, _, name) => name != sug_id
+          }
           draw_expr map {
-            case (draw, expr, _) => programStore.addStatement(Statement(pattern, expr))
+            case (draw, expr, _) =>
+              programStore.addStatement(Statement(pattern, expr))
           }
           if (!draw_expr.isDefined) println(s"Suggestion $sug_id not found")
           clearSuggestions = false
@@ -260,34 +274,21 @@ object ConstructGREPL extends EvalLoop with App {
       }
     }
 
-  def processInclude(line: String) =
-    printIfError {
-      ConstructParser.parseInclude(line) map {
-        case Path(p) => {
+  def processGreplInstruction(line: String) =
+    printIfParseError {
+      ConstructParser.parseGREPLInstruction(line) map {
+        case Include(Path(s)) => {
           try {
-            programStore.addInclude(p)
+            programStore.addInclude(s)
           } catch {
-            case e: java.io.FileNotFoundException => println(f"The path $p was missing:\n$e")
+            case e: java.io.FileNotFoundException =>
+              println(f"The path $s was missing:\n$e")
           }
         }
+        case Returns(returns)            => programStore.setReturns(returns)
+        case Givens(givens)              => programStore.setParameters(givens)
+        case statement @ Statement(_, _) => programStore.addStatement(statement)
       }
-    }
-
-  def processReturn(line: String) =
-    printIfError {
-      ConstructParser.parseReturns(line) map {
-        returns => programStore.setReturns(returns)
-      }
-    }
-
-  def processGiven(line: String) =
-    printIfError {
-      ConstructParser.parseGivens(line) map { programStore.setParameters(_) }
-    }
-
-  def processStatement(line: String) =
-    printIfError {
-      ConstructParser.parseStatement(line) map {programStore.addStatement(_)}
     }
 
   def drawToUI(): Unit = {
@@ -296,11 +297,10 @@ object ConstructGREPL extends EvalLoop with App {
       drawableSuggestions
     )
     ui.setImage(image)
-    pixelsToPoints = {
-      pt => Some(revereseHomography(Point(pt.x, pt.y)))
+    pixelsToPoints = { pt =>
+      Some(revereseHomography(Point(pt.x, pt.y)))
     }
   }
-
 
   // =============== //
   // The actual loop //
@@ -310,15 +310,12 @@ object ConstructGREPL extends EvalLoop with App {
     try {
       clearSuggestions = true
       if (line startsWith ":") processMetaCommand(line.substring(1))
-      else if (ConstructParser.parseSuggestionTake(line).successful) takeSuggestion(line)
-      else if (line startsWith "include") processInclude(line)
-      else if (line startsWith "return") processReturn(line)
-      else if (line startsWith "given") processGiven(line)
-      else processStatement(line)
+      else if (ConstructParser.parseSuggestionTake(line).successful)
+        takeSuggestion(line)
+      else processGreplInstruction(line)
       if (clearSuggestions) suggestions = List()
       drawToUI()
-    }
-    catch {
+    } catch {
       case e: ConstructError => println(e)
     }
   }
@@ -327,18 +324,14 @@ object ConstructGREPL extends EvalLoop with App {
   ui.dispose()
 }
 
-
-class ImagePanel extends Panel
-{
+class ImagePanel extends Panel {
   private var _bufferedImage: BufferedImage = null
 
-  def setImage(value: BufferedImage) =
-  {
+  def setImage(value: BufferedImage) = {
     _bufferedImage = value
   }
 
-  override def paintComponent(g:Graphics2D) =
-  {
+  override def paintComponent(g: Graphics2D) = {
     if (null != _bufferedImage) g.drawImage(_bufferedImage, 0, 0, null)
   }
 }

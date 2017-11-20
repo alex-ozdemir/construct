@@ -1,35 +1,41 @@
 package construct.output
 
 import construct.input.ast._
-import scala.collection.mutable.{HashMap,HashSet,MutableList,Queue}
-
+import scala.collection.mutable.{HashMap, HashSet, MutableList, Queue}
 
 class XPilerError(val msg: String) extends RuntimeException(s"Error: $msg")
 
 object XPiler {
-  def asMacro(c: Construction) : String = {
+  def asMacro(c: Construction): String = {
     val proc = new ConstructionProcessor(c, true)
     proc.emitMacro
   }
-  def asPicture(c: Construction) : String = {
+  def asPicture(c: Construction): String = {
     val proc = new ConstructionProcessor(c, false)
     proc.emitPicture
   }
-  def asDoc(main: Construction, lib: Iterable[Item]) : String = {
-    val cons = HashMap[Identifier,Construction](main.name -> main)
+  def asDoc(main: Construction, lib: Iterable[Item]): String = {
+    val cons = HashMap[Identifier, Construction](main.name -> main)
     val shapes = HashSet[Identifier]()
     lib foreach {
       case c: Construction => cons += (c.name -> c)
-      case s: Shape => shapes += s.con.name
+      case s: Shape        => shapes += s.con.name
     }
-    def lookupConstruction(id: Identifier, s: Statement) : Option[Construction] = {
+    def lookupConstruction(id: Identifier,
+                           s: Statement): Option[Construction] = {
       val builtins =
-        List("circle","line","segment","ray","new","intersection") map {Identifier(_)}
+        List("circle", "line", "segment", "ray", "new", "intersection") map {
+          Identifier(_)
+        }
       if (builtins contains id) None
       else {
         Some(cons get id getOrElse {
-          if (shapes contains id) throw new XPilerError(s"Identifier <${id.name}> is a shape, but can only XPile constructions.\nStatement: $s")
-          else throw new XPilerError(s"Unknown Identifier <${id.name}> in statement $s")
+          if (shapes contains id)
+            throw new XPilerError(
+              s"Identifier <${id.name}> is a shape, but can only XPile constructions.\nStatement: $s")
+          else
+            throw new XPilerError(
+              s"Unknown Identifier <${id.name}> in statement $s")
         })
       }
     }
@@ -39,25 +45,28 @@ object XPiler {
       val con = constructions_to_scan.dequeue()
       used_constructions += con
       con.statements foreach {
-        case s@Statement(_,FnApp(fn_id, params)) => {
+        case s @ Statement(_, FnApp(fn_id, params)) => {
           if (params forall {
-            case Exactly(id) => true
-            case _ => false
-          }) {
-            lookupConstruction(fn_id, s) map {c => constructions_to_scan.enqueue(c)}
+                case Exactly(id) => true
+                case _           => false
+              }) {
+            lookupConstruction(fn_id, s) map { c =>
+              constructions_to_scan.enqueue(c)
+            }
           } else {
-            throw new XPilerError(s"Application of ${fn_id.name} to args $params include non-identifier parameters!")
+            throw new XPilerError(
+              s"Application of ${fn_id.name} to args $params include non-identifier parameters!")
           }
         }
         case _ => {}
       }
     }
     header + env("document") {
-      (used_constructions filter {_ != main} map { asMacro(_) } mkString "\n") + "\n" +
-      asPicture(main)
+      (used_constructions filter { _ != main } map { asMacro(_) } mkString "\n") + "\n" +
+        asPicture(main)
     }
   }
-  def env(env: String)(body: String) : String = {
+  def env(env: String)(body: String): String = {
     s"""
     \\begin{$env}
       $body
@@ -78,108 +87,134 @@ object XPiler {
 
 class ConstructionProcessor(c: Construction, asMacro: Boolean) {
   val Construction(name, params, statements, returns) = c
-  val constructions = HashMap[Identifier,String]()
-  val points = HashMap[Identifier,String]()
-  val circles = HashMap[Identifier,String]()
-  val lines = HashMap[Identifier,String]()
-  def getPoint(id: Identifier) : String = points get id getOrElse {throw new Error("!")}
-  require(params forall {case Parameter(_,ty) => ty == Identifier("point")})
+  val constructions = HashMap[Identifier, String]()
+  val points = HashMap[Identifier, String]()
+  val circles = HashMap[Identifier, String]()
+  val lines = HashMap[Identifier, String]()
+  def getPoint(id: Identifier): String = points get id getOrElse {
+    throw new Error("!")
+  }
+  require(params forall { case Parameter(_, ty) => ty == Identifier("point") })
   require(returns.length <= 2)
   var i = 1
   if (asMacro) {
-    params foreach {case Parameter(name,_) => {
-      points += (name -> s"#$i")
-      i += 1
-    } }
+    params foreach {
+      case Parameter(name, _) => {
+        points += (name -> s"#$i")
+        i += 1
+      }
+    }
   } else {
-    params foreach {case Parameter(name,_) => points += (name -> name.name)}
+    params foreach { case Parameter(name, _) => points += (name -> name.name) }
   }
-  def nameId(i: Identifier) : String = if (asMacro) s"${localPrefix}${i.name}" else i.name
-  val localPrefix = s"${c.name.name.replace("_","")}Tmp"
-  def nameCons(i: Identifier) : String = s"\\construct${i.name.replace("_","")}"
-  def makeStatement(s: Statement) : String = {
+  def nameId(i: Identifier): String =
+    if (asMacro) s"${localPrefix}${i.name}" else i.name
+  val localPrefix = s"${c.name.name.replace("_", "")}Tmp"
+  def nameCons(i: Identifier): String = s"\\construct${i.name.replace("_", "")}"
+  def makeStatement(s: Statement): String = {
     val INTER = Identifier("intersection")
     val CIRC = Identifier("circle")
     val LINE = Identifier("line")
     s match {
-      case Statement(Id(id), FnApp(CIRC,List(Exactly(id1),Exactly(id2)))) => {
+      case Statement(Id(id), FnApp(CIRC, List(Exactly(id1), Exactly(id2)))) => {
         circles += (id -> s"${getPoint(id1)},${getPoint(id2)}")
         ""
       }
-      case Statement(Id(id), FnApp(LINE,List(Exactly(id1),Exactly(id2)))) => {
+      case Statement(Id(id), FnApp(LINE, List(Exactly(id1), Exactly(id2)))) => {
         lines += (id -> s"${getPoint(id1)},${getPoint(id2)}")
         ""
       }
-      case Statement(p, FnApp(INTER,List(Exactly(id1),Exactly(id2)))) => {
-        val lineIds = List(id1, id2) filter {id => lines contains id}
-        val circleIds = List(id1, id2) filter {id => circles contains id}
+      case Statement(p, FnApp(INTER, List(Exactly(id1), Exactly(id2)))) => {
+        val lineIds = List(id1, id2) filter { id =>
+          lines contains id
+        }
+        val circleIds = List(id1, id2) filter { id =>
+          circles contains id
+        }
         val inter = (lineIds.length, circleIds.length) match {
           case (0, 2) => {
-            val str0 = circles get circleIds(0) getOrElse {throw new Error("!")}
-            val str1 = circles get circleIds(1) getOrElse {throw new Error("!")}
+            val str0 = circles get circleIds(0) getOrElse {
+              throw new Error("!")
+            }
+            val str1 = circles get circleIds(1) getOrElse {
+              throw new Error("!")
+            }
             s"\\tkzInterCC($str0)($str1)"
           }
           case (1, 1) => {
-            val str0 = lines get lineIds(0) getOrElse {throw new Error("!")}
-            val str1 = circles get circleIds(0) getOrElse {throw new Error("!")}
+            val str0 = lines get lineIds(0) getOrElse { throw new Error("!") }
+            val str1 = circles get circleIds(0) getOrElse {
+              throw new Error("!")
+            }
             s"\\tkzInterLC($str0)($str1)"
           }
           case (2, 0) => {
-            val str0 = lines get lineIds(0) getOrElse {throw new Error("!")}
-            val str1 = lines get lineIds(1) getOrElse {throw new Error("!")}
+            val str0 = lines get lineIds(0) getOrElse { throw new Error("!") }
+            val str1 = lines get lineIds(1) getOrElse { throw new Error("!") }
             s"\\tkzInterLL($str0)($str1)"
           }
-          case _ => {throw new Error(s"Cannot take intersection of these types: $s")}
+          case _ => {
+            throw new Error(s"Cannot take intersection of these types: $s")
+          }
         }
         inter + " " + emitPattern(p)
       }
-      case Statement(p, FnApp(fn_id, params)) => nameCons(fn_id) +
-        (params map {
-          case Exactly(id) => s"{${getPoint(id)}}"
-          case pa => throw new XPilerError(s"Cannot do construction call with non-point $pa")
-        } mkString "") + " " +
-        emitPattern(p)
+      case Statement(p, FnApp(fn_id, params)) =>
+        nameCons(fn_id) +
+          (params map {
+            case Exactly(id) => s"{${getPoint(id)}}"
+            case pa =>
+              throw new XPilerError(
+                s"Cannot do construction call with non-point $pa")
+          } mkString "") + " " +
+          emitPattern(p)
     }
   }
-  def emitPattern(p: Pattern) : String = p match {
+  def emitPattern(p: Pattern): String = p match {
     case Id(id) => {
       points += (id -> nameId(id))
-      s"\\tkzGetPoint{${nameId{id}}}"
+      s"\\tkzGetPoint{${nameId { id }}}"
     }
-    case Tuple(List(Id(id1),Id(id2))) => {
+    case Tuple(List(Id(id1), Id(id2))) => {
       points += (id1 -> nameId(id1))
       points += (id2 -> nameId(id2))
-      s"\\tkzGetPoints{${nameId{id1}}}{${nameId{id2}}}"
+      s"\\tkzGetPoints{${nameId { id1 }}}{${nameId { id2 }}}"
     }
     case p => throw new XPilerError(s"Can not XPile the complex pattern $p")
   }
-  def emitReturns : String =
+  def emitReturns: String =
     c.returns match {
       case List(id) => s"\\tkzRenamePoint(${getPoint(id)}){tkzPointResult}"
-      case List(id1,id2) => s"\\tkzRenamePoint(${getPoint(id1)}){tkzFirstPointResult}\n" +
-                       s"\\tkzRenamePoint(${getPoint(id2)}){tkzSecondPointResult}"
+      case List(id1, id2) =>
+        s"\\tkzRenamePoint(${getPoint(id1)}){tkzFirstPointResult}\n" +
+          s"\\tkzRenamePoint(${getPoint(id2)}){tkzSecondPointResult}"
       case _ => throw new Error("Can only return 2 points")
     }
-  def emitBody : String = statements map {makeStatement(_)} filter {_ != ""} mkString "\n"
-  def emitMacro : String = s"\\newcommand{${nameCons(name)}}[${params.length}]{\n" +
-    emitBody + "\n" + emitReturns + "\n}"
-  def emitPicture : String = {
-    val pointsPos = List((0,0),(1,0),(1,1))
+  def emitBody: String =
+    statements map { makeStatement(_) } filter { _ != "" } mkString "\n"
+  def emitMacro: String =
+    s"\\newcommand{${nameCons(name)}}[${params.length}]{\n" +
+      emitBody + "\n" + emitReturns + "\n}"
+  def emitPicture: String = {
+    val pointsPos = List((0, 0), (1, 0), (1, 1))
     env("tikzpicture") {
-      (c.parameters zip pointsPos map {case (Parameter(name,_), (x, y)) =>
-        f"\\tkzDefPoint($x%.2f,$y%.2f){${name.name}}"
+      (c.parameters zip pointsPos map {
+        case (Parameter(name, _), (x, y)) =>
+          f"\\tkzDefPoint($x%.2f,$y%.2f){${name.name}}"
       } mkString "\n") + "\n" + emitBody +
-      s"\n\\tkzDrawPoints(${points.values mkString ","})" +
-      s"\n\\tkzLabelPoints(${points.values mkString ","})" +
-      (if (lines.size > 0) s"\n\\tkzDrawLines(${lines.values mkString " "})" else "") +
-      "\n" + (circles.values map {str => s"\\tkzDrawCircle($str)"} mkString "\n")
+        s"\n\\tkzDrawPoints(${points.values mkString ","})" +
+        s"\n\\tkzLabelPoints(${points.values mkString ","})" +
+        (if (lines.size > 0) s"\n\\tkzDrawLines(${lines.values mkString " "})"
+         else "") +
+        "\n" + (circles.values map { str =>
+        s"\\tkzDrawCircle($str)"
+      } mkString "\n")
     }
   }
-  def env(env: String)(body: String) : String = {
+  def env(env: String)(body: String): String = {
     s"""
     \\begin{$env}
       $body
     \\end{$env} """
   }
 }
-
