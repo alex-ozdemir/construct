@@ -112,9 +112,14 @@ class ProgramStore {
         }
       }
     }
-
     if (liveIds.size > 0) {
-      Left(f"The returns, $returns, are dependent on $liveIds, which are not given")
+      val sing_return = returns.size == 1
+      val sing_live = liveIds.size == 1
+      Left(f"The return${if (sing_return) "" else "s"}, ${
+        PrettyPrinter.printIds(returns)
+      }, ${if (sing_return) "is" else "are"} dependent on ${
+        PrettyPrinter.printIds(liveIds)
+      }, which ${if (sing_live) "is" else "are"} not given")
     } else {
       val id = Identifier(name)
       val cons = Construction(id, parameters.toList, neededStatements, returns.toList)
@@ -172,8 +177,9 @@ object ConstructGREPL extends EvalLoop with App {
   :r[eset]                        Empty the canvas.
   :d[raw] [<file>]                Draw canvas to `file`.
                                     Optionally set output file to `file`.
+                                    Otherwise uses last file or "out.png"
   :u[ndo]                         Undo last action.
-  :?                              Print interpreter state.
+  :?                              Print interpreter state (for developers)
   :w[rite] <construction> <file>  Name the session `construction` and write to `file`.
   :s[uggest] [<construction>]     Suggest how `construction` might be used,
                                     or clear suggestions."""

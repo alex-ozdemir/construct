@@ -54,7 +54,7 @@ object Loader {
         }
         case e: ConstructParser.NoSuccess => {
           println(e)
-          sys.exit(0)
+          sys.exit(1)
         }
       }
     }

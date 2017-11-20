@@ -9,7 +9,7 @@ import construct.input.ast._
 object PrettyPrinter {
   val s = " "
   val c = ", "
-  val n = "\n"
+  val n = sys.props("line.separator")
   def print(p: Program) : String = printPaths(p.references) + printItems(p.constructions)
   def print(c: Construction, ty: String) : String = {
     val Construction(name, params, statements, returns) = c
@@ -50,5 +50,8 @@ object PrettyPrinter {
       case Difference(left, right) => print(left) + " - " + print(right)
     }
   def printReturns(rets: List[Identifier]) : String =
-    "return" + s + (rets map { print(_) } mkString c) + n
+    "return" + s + printIds(rets) + n
+
+  def printIds(rets: TraversableOnce[Identifier]) : String =
+    rets map { print(_) } mkString c
 }

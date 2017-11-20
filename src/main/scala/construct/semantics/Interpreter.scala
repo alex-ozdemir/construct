@@ -32,7 +32,7 @@ case class Product(val params: List[Var], val v: Locus) extends Var
 
 class ConstructError(val msg: String) extends RuntimeException(s"Error: $msg")
 case class UnknownIdentifier(val ty: String, val id: Identifier) extends ConstructError(s"Unkown $ty identifier, <${id.name}>")
-case class TypeError(val v: Var, val expected: String) extends ConstructError(s"$v was expected to be a $expected, but is not!")
+case class TypeError(val v: Var, val expected: String) extends ConstructError(s"$v was expected to be a $expected!")
 case class UsedIdentifier(val id: String) extends ConstructError(s"The identifier $id has already been used")
 
 class ConstructInterpreter {
