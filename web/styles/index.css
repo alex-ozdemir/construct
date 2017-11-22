@@ -16,11 +16,6 @@ body {
     font-weight: bold;
 }
 
-.flex-container-vert {
-  display: flex;
-  flex-direction: column;
-}
-
 .flex-container-hor {
   display: flex;
   flex-direction: row;
@@ -28,11 +23,37 @@ body {
 
 .left {
   width: 720px;
-  border: 1px solid;
+  display: flex;
+  flex-direction: column
+}
+
+.right {
+    display: flex;
+    margin: 10px;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
 #drawing {
+  float: down;
   width: 500px;
   height: 500px;
   border: 1px dashed;
+}
+
+#lib-editor {
+  height: 45vh;
+  width: 100%;
+}
+
+.lib-editor .CodeMirror {
+  border: 1px solid;
+  height: 45vh;
+  line-height: 1em;
+  font-family: monospace;
+
+  /* Necessary so the scrollbar can be absolutely positioned within the wrapper on Lion. */
+  position: relative;
+  /* This prevents unwanted scrollbars from showing up on the body and wrapper in IE. */
+  overflow: hidden;
 }

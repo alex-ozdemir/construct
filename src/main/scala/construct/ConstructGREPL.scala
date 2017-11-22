@@ -31,12 +31,20 @@
 package construct
 
 import construct.input.parser.ConstructParser
-import construct.input.loader.{FileSystemLoader, Loader}
+import construct.input.loader.Loader
 import construct.input.ast._
 import construct.semantics.{ConstructError, ConstructInterpreter}
 import construct.output.{Drawable, PNG, PrettyPrinter}
 
 import scala.collection.mutable
+
+abstract class UndoableAction(val indentifiers: Traversable[Identifier])
+object UndoableAction {
+  // The identifier produced by adding this point
+  case class AddPoint(identifier: Identifier) extends UndoableAction(List(identifier))
+  // The identifiers produced by this statement
+  case class Statement(identifiers: Traversable[Identifier]) extends UndoableAction(identifiers)
+}
 
 // A Program Store tracks the statements that the user has done so far
 // This information can be used to extract an equivalent Construct program
@@ -48,26 +56,30 @@ class ProgramStore(val loader: Loader) {
   val parameters = new mutable.MutableList[Parameter]()
   var statements = new mutable.MutableList[Statement]()
   val returns = new mutable.MutableList[Identifier]()
+  val undoableActions = new mutable.ArrayStack[UndoableAction]()
   var interpreter = new ConstructInterpreter
+  interpreter.add_items(loader.init().values)
+
   def addStatement(s: Statement): Unit = {
-    interpreter.execute(s)
+    undoableActions += UndoableAction.Statement(interpreter.execute(s))
     statements += s
   }
-  def undoStatement(): Unit = {
-    statements = statements dropRight 1
-    interpreter = new ConstructInterpreter
-    interpreter.set_inputs(parameters, None)
-    includes foreach {
-      case Path(p) => {
-        val (item_map, cons) = loader.load(p)
-        interpreter.add_items(item_map.values.toList)
+  def undo(): Unit = {
+    if (undoableActions.nonEmpty) {
+      undoableActions.pop() match {
+        case UndoableAction.Statement(ids) =>
+          statements = statements dropRight 1
+          ids foreach { interpreter.vars.remove(_) }
+        case UndoableAction.AddPoint(id) =>
+          interpreter.vars.remove(id)
       }
     }
-    statements foreach { interpreter.execute(_) }
   }
+
   def addPoint(name: Identifier, pt: engine.Point): Unit = {
     interpreter.add_input(Parameter(name, Identifier("point")),
                           Some(semantics.Basic(pt)))
+    undoableActions += UndoableAction.AddPoint(name)
   }
   def setParameters(params: List[Parameter]): Unit = {
     parameters.clear()
@@ -88,6 +100,7 @@ class ProgramStore(val loader: Loader) {
     statements.clear()
     returns.clear()
     interpreter = new ConstructInterpreter
+    interpreter.add_items(loader.init().values)
   }
 
   /**
@@ -165,7 +178,7 @@ class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GR
     val message =
       """Metacommands:
   :h[elp]                         Print this message.
-  :r[eset]                        Empty the canvas.
+  :r[eset]                        Empty the canvas and reload base libraries
   :d[raw] [<file>]                Draw canvas to `file`.
                                     Optionally set output file to `file`.
                                     Otherwise uses last file or "out.png"
@@ -184,7 +197,7 @@ class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GR
       val splitCommand = command.split(" +")
       if (splitCommand.length > 1) outputFile = splitCommand(1)
       frontend.draw(outputFile, programStore.interpreter.get_drawables.toList)
-    } else if ((command startsWith "undo") || (command startsWith "u")) undo()
+    } else if ((command startsWith "undo") || (command startsWith "u")) programStore.undo()
     else if (command startsWith "?") frontend.printToShell(s"${programStore.interpreter}")
     else if ((command startsWith "write") || (command startsWith "w"))
       write(command)
@@ -202,8 +215,6 @@ class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GR
     nextLetter = 'A'
     programStore.reset()
   }
-
-  def undo(): Unit = programStore.undoStatement()
 
   def write(command: String): Unit = {
     val splitCommand = command.split(" +")

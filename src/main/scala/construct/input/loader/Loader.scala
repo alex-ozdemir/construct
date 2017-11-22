@@ -5,14 +5,15 @@ import construct.input.ast.{Construction, Identifier, Item}
 import scala.collection.immutable.HashMap
 
 trait Loader {
-  var filenames: List[String]
+  /**
+    * Load a construct file at a particular path
+    * @param filename the path
+    * @return The list of bound items, with a first construction if present
+    */
+  def load(filename: String): (HashMap[Identifier, Item], Option[Construction])
 
   /**
-    * Returns whether the file was loaded
-    * @param filename the file to load
-    * @return whether it could be found
+    * Initialize the loader, potentially returning base items
     */
-  def addFile(filename: String): Unit
-  def load(filename: String): (HashMap[Identifier, Item], Option[Construction])
-  def reload(): (HashMap[Identifier, Item], Option[Construction])
+  def init(): (HashMap[Identifier, Item])
 }

@@ -17,44 +17,28 @@ import construct.input.ast._
 import construct.input.parser.ConstructParser
 import construct.semantics.{FileNotFound, IncludeError}
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.collection.immutable.HashMap
 
 class FileSystemLoader() extends Loader {
 
-  override var filenames: List[String] = List()
 
-  def name(i: Item): Identifier =
-    i match {
-      case c: Construction => c.name
-      case Shape(c)        => c.name
-    }
-
-  override def addFile(filename: String): Unit = {
-    val program = io.Source.fromFile(filename).getLines.reduceLeft(_ + "\n" + _)
-    filenames = filenames :+ filename
-  }
+  override def init(): HashMap[Identifier, Item] = HashMap()
 
   override def load(filename: String): (HashMap[Identifier, Item], Option[Construction]) = {
-    val ret = loadFrom(List(filename))
-    filenames = filenames :+ filename
-    ret
-  }
-
-  override def reload(): (HashMap[Identifier, Item], Option[Construction]) = {
-    loadFrom(filenames)
+    loadFrom(List(filename))
   }
 
   private def loadFrom(files: List[String]) = {
     try {
       var first: Option[Construction] = None
-      val loaded = new HashSet[Path]()
+      val loaded = new mutable.HashSet[Path]()
       var items = immutable.HashMap[Identifier, Item]()
-      val to_load: Queue[Path] = new Queue()
+      val to_load: mutable.Queue[Path] = new mutable.Queue()
       to_load ++= files map {
         Paths.get(_)
       }
-      while (!to_load.isEmpty) {
+      while (to_load.nonEmpty) {
         val path = to_load.dequeue
         val dir = if (path.getParent == null) Paths.get(".") else path.getParent
         loaded += path
@@ -64,7 +48,7 @@ class FileSystemLoader() extends Loader {
           case ConstructParser.Success(p, _) => {
             val Program(imports, these_items) = p
             val cons = these_items collect { case c: Construction => c }
-            if (first.isEmpty && !cons.isEmpty) first = Some(cons(0))
+            if (first.isEmpty && cons.nonEmpty) first = Some(cons(0))
             val importPaths = imports map {
               case ast.Path(pathStr) => dir.resolve(pathStr)
             }
@@ -73,14 +57,10 @@ class FileSystemLoader() extends Loader {
                 Files.isSameFile(path, _)
               })
             }
-            /*these_items filter {items contains name(_)} foreach {i =>
-              throw new Error(s"Tried to load construction ${name(i)} from file $path, but" +
-                " a construction by that name already exists")
-            }*/
             items ++= these_items filter { i =>
-              !(items contains name(i))
+              !(items contains i.name)
             } map { i =>
-              (name(i), i)
+              (i.name, i)
             }
           }
           case e: ConstructParser.NoSuccess => {

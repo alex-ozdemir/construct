@@ -30,8 +30,7 @@ object ConstructC extends App {
     throw new Error("Must provide file to interpret")
   }
   val loader = new FileSystemLoader()
-  loader.addFile(filename)
-  val (item_map, main_option) = loader.reload()
+  val (item_map, main_option) = loader.load(filename)
   val main = main_option getOrElse {
     throw new Error(s"No main constrution in $filename")
   }

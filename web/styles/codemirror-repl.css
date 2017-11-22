@@ -1,5 +1,6 @@
 .repl .CodeMirror {
-  height: 100%;
+  border: 1px solid;
+  height: 45vh;
   line-height: 1em;
   font-family: monospace;
 

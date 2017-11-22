@@ -67,6 +67,8 @@ case class BuiltinMisuseError(ty: String, from: String)
 case class ImplicitGiven(param: Parameter)
     extends ConstructError(
       s"Implicit givens must be points, but `${PrettyPrinter.print(param.name)}` is a `${param.ty}`")
+case class RebindError(pattern: Pattern, ident: Identifier)
+    extends ConstructError(s"The pattern `${PrettyPrinter.print(pattern)}` rebinds the variable `${ident.name}`")
 case class ArityError(c: Construction, vars: List[Var])
     extends ConstructError(
       s"The construction `${c.name.name}` expects ${c.parameters.length} parameters but got ${vars.length}")
@@ -90,7 +92,8 @@ case class VagueBindError(pat: Pattern, v: Var)
 case class FileNotFound(error: String) extends ConstructError(error)
 case class IncludeError(filename: String, error: String)
     extends ConstructError(s"While reading '$filename' I encountered the following error:\n$error")
-
+case class WebInclude(file: String)
+    extends ConstructError(s"I cannot include `$file`, as web construct does not support includes")
 class ConstructInterpreter {
 
   val constructions = new mutable.HashMap[Identifier, Construction]
@@ -363,9 +366,15 @@ class ConstructInterpreter {
     })
   }
 
-  def execute(assignment: Statement): Unit = {
+  def execute(assignment: Statement): Traversable[Identifier] = {
     val Statement(pattern, expr) = assignment
+    val boundIndents = pattern.boundIdents.toSet
+    val reboundIdents = boundIndents intersect vars.keySet
+    if (reboundIdents.nonEmpty) {
+      throw RebindError(pattern, reboundIdents.iterator.next())
+    }
     pattern_match(pattern, evaluate(expr))
+    boundIndents
   }
 
   def make_named(id: Identifier, v: Var): Drawable =

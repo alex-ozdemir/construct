@@ -32,7 +32,8 @@ function CodeMirrorREPL(textareaId, options) {
         onChange: change,
         indentUnit: 4,
         undoDepth: 1,
-        gutter: true
+        gutter: true,
+        scrollbarStyle: 'native',
     };
 
     var mirror = CodeMirror.fromTextArea(textarea, options);

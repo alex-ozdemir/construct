@@ -2,12 +2,13 @@ package construct
 
 import construct.engine.Point
 import construct.input.ast.Program
-import construct.input.loader.{Loader, NonLoader}
-import construct.output.{CanvasDrawer, Drawable}
+import construct.input.loader.{Loader, WebLoader}
+import construct.output.{CanvasDrawer, Drawable, PrettyPrinter}
 import construct.semantics.ConstructError
 import org.scalajs.dom
 import dom.document
 import org.scalajs.dom.html.Canvas
+import org.scalajs.dom.raw.HTMLTextAreaElement
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
@@ -15,7 +16,8 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 @JSExportTopLevel("ConstructWebGREPL")
 class ConstructWebGREPL(printer: js.Function1[String,Unit]) extends GREPLFrontend {
 
-  val loader: Loader = new NonLoader
+  val libEditor: HTMLTextAreaElement = document.getElementById("lib-editor").asInstanceOf[HTMLTextAreaElement]
+  val loader: Loader = new WebLoader(libEditor)
   val backend: GREPLBackend = new ConstructGREPL(this, loader)
   var pixelsToPoints: Point => Point = { _ => Point(0,0)}
 
@@ -49,15 +51,15 @@ class ConstructWebGREPL(printer: js.Function1[String,Unit]) extends GREPLFronten
     *
     * @param program  the program to write
     * @param filename the file to save it in
-    * @return false
+    * @return true
     */
   override def write(program: Program, filename: String): Boolean = {
-    printer(":write is not yer supported on web")
-    false
+    libEditor.value = libEditor.value + "\n" + PrettyPrinter.print(program)
+    true
   }
 
   override def draw(filename: String, drawables: List[Drawable]): Unit = {
-    printer(":draw is not yer supported on web")
+    printer(":draw is not yet supported on web")
   }
 }
 
