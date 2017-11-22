@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Construct</title>
+    <script type="text/javascript" src="https://codemirror.net/lib/codemirror.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://codemirror.net/lib/codemirror.css">
+    <script type="text/javascript" src="https://codemirror.net/addon/edit/matchbrackets.js"></script>
+    <link rel="stylesheet" href="./styles/index.css">
+    <link rel="stylesheet" href="./styles/codemirror-repl.css">
+    <link rel="stylesheet" href="./themes/eclipse.css">
+    <script src="./js/dist/codemirror-repl.js"></script>
+    <script src="./js/index.js"></script>
+</head>
+<body>
+    <div class="flex-container-hor">
+        <div class="flex-container-vert left">
+            <div>
+                <div class="repl">
+                    <textarea id="repl" autofocus="true"></textarea>
+                </div>
+            </div>
+            <div id="shellOut"></div>
+        </div>
+        <div>
+            <canvas id="drawing" height="500" width="500"></canvas>
+        </div>
+    </div>
+
+    <!-- Include JavaScript dependencies -->
+    <script type="text/javascript" src="../target/scala-2.11/construct-jsdeps.js"></script>
+    <!-- Include Scala.js compiled code -->
+    <script type="text/javascript" src="../target/scala-2.11/construct-opt.js"></script>
+</body>
+</html>

@@ -16,9 +16,7 @@
 //       [Point]
 //    [Union]
 
-package construct.engine;
-
-import scala.math;
+package construct.engine
 
 object Closeness {
   val EPSILON = 0.000001
@@ -38,6 +36,7 @@ sealed abstract class Locus {
   def choose: Option[Point]
   def contains(that: Point): Boolean
   def empty: Boolean = choose.isEmpty
+  def asListOfSingle: List[SingleLocus]
 }
 
 sealed abstract class SingleLocus extends Locus {
@@ -52,6 +51,8 @@ sealed abstract class SingleLocus extends Locus {
   }
   def contains(that: Point): Boolean
   def choose: Option[Point]
+  def name: String
+  override def asListOfSingle: List[SingleLocus] = List(this)
 }
 
 sealed abstract class PrimativeLocus extends SingleLocus {
@@ -67,7 +68,7 @@ sealed abstract class PrimativeLocus extends SingleLocus {
   def choose: Option[Point]
 }
 
-case class Union(val set: Set[SingleLocus]) extends Locus {
+case class Union(set: Set[SingleLocus]) extends Locus {
 
   override def asPoints: List[Point] =
     (set collect { case x: Point                                 => x }).toList
@@ -96,12 +97,14 @@ case class Union(val set: Set[SingleLocus]) extends Locus {
 
   def choose: Option[Point] = if (set.isEmpty) None else set.head.choose
 
-  def contains(that: Point) = set exists { _ contains that }
+  def contains(that: Point): Boolean = set exists { _ contains that }
+
+  override def asListOfSingle: List[SingleLocus] = set.toList
 
   override def empty: Boolean = set.isEmpty
 }
 
-case class Point(val x: Double, val y: Double) extends SingleLocus {
+case class Point(x: Double, y: Double) extends SingleLocus {
   import Closeness._
   override def equals(other: Any): Boolean = {
     other match {
@@ -112,6 +115,7 @@ case class Point(val x: Double, val y: Double) extends SingleLocus {
   }
   def intersect(other: Locus): Locus =
     if (other contains this) this else Union(Set())
+  def name: String = "point"
   def choose: Option[Point] = Some(this)
   override def asPoints: List[Point] = List(this)
   def +(that: Point): Point = Point(this.x + that.x, this.y + that.y)
@@ -132,16 +136,16 @@ case class Point(val x: Double, val y: Double) extends SingleLocus {
     val c = math.cos(ang)
     Point(x * c - y * s, y * c + x * s)
   }
-  def withMag(mag: Double) = this * (mag / !this)
+  def withMag(mag: Double): Point = this * (mag / !this)
   def unary_!(): Double = math.sqrt(x * x + y * y)
   def angle: Double = math.atan2(y, x)
   def contains(that: Point): Boolean = this == that
 }
 
-case class Circle(val c: Point, val p: Point) extends PrimativeLocus {
+case class Circle(c: Point, p: Point) extends PrimativeLocus {
   import Closeness._
-  val r_sq = (c.y - p.y) * (c.y - p.y) + (c.x - p.x) * (c.x - p.x)
-  val r = math.sqrt(r_sq)
+  val r_sq: Double = (c.y - p.y) * (c.y - p.y) + (c.x - p.x) * (c.x - p.x)
+  val r: Double = math.sqrt(r_sq)
   def param(pt: Point): Option[Double] = {
     if (this contains pt)
       Some((pt - c).angle)
@@ -159,13 +163,14 @@ case class Circle(val c: Point, val p: Point) extends PrimativeLocus {
   def contains(pt: Point): Boolean = !(pt - c) === r
 
   def choose: Option[Point] = Some(p)
+  def name: String = "circle"
   override def asCircles: List[Circle] = List(this)
 }
 
-case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
+case class Line(p1: Point, p2: Point) extends PrimativeLocus {
   import Closeness._
-  val angle = math.atan2(p2.y - p1.y, p2.x - p1.x)
-  val standard_form =
+  val angle: Double = math.atan2(p2.y - p1.y, p2.x - p1.x)
+  val standard_form: Option[(Double, Double)] =
     if (p1.x === p2.x) None
     else {
       val slope = (p2.y - p1.y) / (p2.x - p1.x)
@@ -189,12 +194,13 @@ case class Line(val p1: Point, val p2: Point) extends PrimativeLocus {
   def contains(pt: Point): Boolean = !((pt - p1) reject (p2 - p1)) === 0
 
   def choose: Option[Point] = Some(p2)
+  def name: String = "line"
   override def asLines: List[Line] = List(this)
 }
 
-case class Ray(val p1: Point, val p2: Point) extends PrimativeLocus {
+case class Ray(p1: Point, p2: Point) extends PrimativeLocus {
   import Closeness._
-  val angle = math.atan2(p2.y - p1.y, p2.x - p1.x)
+  val angle: Double = math.atan2(p2.y - p1.y, p2.x - p1.x)
 
   def asLine: Line = Line(p1, p2)
 
@@ -203,7 +209,7 @@ case class Ray(val p1: Point, val p2: Point) extends PrimativeLocus {
   override def equals(other: Any): Boolean = {
     other match {
       case ray: Ray => {
-        return (p1 == ray.p1) && (angle === ray.angle)
+        (p1 == ray.p1) && (angle === ray.angle)
       }
       case _ => false
     }
@@ -211,13 +217,14 @@ case class Ray(val p1: Point, val p2: Point) extends PrimativeLocus {
 
   def contains(pt: Point): Boolean =
     (!((pt - p1) reject (p2 - p1))) === 0 && param(pt).get >= 0
+  def name: String = "ray"
 
   def choose: Option[Point] = Some(p2)
 }
 
-case class Segment(val p1: Point, val p2: Point) extends PrimativeLocus {
+case class Segment(p1: Point, p2: Point) extends PrimativeLocus {
   import Closeness._
-  val angle = math.atan2(p2.y - p1.y, p2.x - p1.x)
+  val angle: Double = math.atan2(p2.y - p1.y, p2.x - p1.x)
 
   def asLine: Line = Line(p1, p2)
 
@@ -226,7 +233,7 @@ case class Segment(val p1: Point, val p2: Point) extends PrimativeLocus {
   override def equals(other: Any): Boolean = {
     other match {
       case that: Segment => {
-        return (this.p1 == that.p1 && this.p2 == that.p2) ||
+        (this.p1 == that.p1 && this.p2 == that.p2) ||
           (this.p1 == that.p2 && this.p2 == that.p1)
       }
       case _ => false
@@ -237,9 +244,10 @@ case class Segment(val p1: Point, val p2: Point) extends PrimativeLocus {
     !((pt - p1) reject (p2 - p1)) === 0 && param(pt).get >= 0 && param(pt).get <= 1
 
   def choose: Option[Point] = Some(p2)
+  def name: String = "segment"
 }
 
-// Holds all the intersectioni logic for primitives
+// Holds all the intersection logic for primitives
 object Intersection {
   import Closeness._
   def intersect(A: PrimativeLocus, B: PrimativeLocus): Locus =
@@ -293,9 +301,9 @@ object Intersection {
         val A = math.pow(m, 2) + 1
         val B = 2 * (b - E.c.y) * m - 2 * E.c.x
         val C = math.pow(b - E.c.y, 2) + math.pow(E.c.x, 2) - E.r_sq
-        val desc = math.pow(B, 2) - 4 * A * C;
+        val desc = math.pow(B, 2) - 4 * A * C
         if (desc === 0) {
-          val x = -B / (2 * A);
+          val x = -B / (2 * A)
           Point(x, m * x + b)
         } else if (desc < 0) {
           Union(Set())

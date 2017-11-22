@@ -1,0 +1,38 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+}
+
+.message {
+    color: #000000 !important;
+    font-weight: normal !important;
+}
+
+.error {
+    color: #FF0000 !important;
+    font-weight: bold;
+}
+
+.flex-container-vert {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-container-hor {
+  display: flex;
+  flex-direction: row;
+}
+
+.left {
+  width: 720px;
+  border: 1px solid;
+}
+
+#drawing {
+  width: 500px;
+  height: 500px;
+  border: 1px dashed;
+}
