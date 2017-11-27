@@ -62,7 +62,7 @@ object ConstructCLIGREPL extends App with EvalLoop with GREPLFrontend {
     try {
       grepl.processLine(line)
     } catch {
-      case e: ConstructError => printToShell(s"Error: ${e.msg}")
+      case e: ConstructError => printToShell(e.fullMsg)
     }
   }
 

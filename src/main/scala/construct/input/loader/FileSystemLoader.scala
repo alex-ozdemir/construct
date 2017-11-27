@@ -15,7 +15,7 @@ import scala.collection.mutable.HashSet
 import construct.input.ast
 import construct.input.ast._
 import construct.input.parser.ConstructParser
-import construct.semantics.{FileNotFound, IncludeError}
+import construct.semantics.ConstructError
 
 import scala.collection.{immutable, mutable}
 import scala.collection.immutable.HashMap
@@ -64,13 +64,13 @@ class FileSystemLoader() extends Loader {
             }
           }
           case e: ConstructParser.NoSuccess => {
-            throw IncludeError(path.toString, s"parser error: ${e.msg}\n${e.next.pos.longString}")
+            throw ConstructError.IncludeError(path.toString, s"parser error: ${e.msg}\n${e.next.pos.longString}")
           }
         }
       }
       (items, first)
     } catch {
-      case e: FileNotFoundException => throw FileNotFound(e.getMessage)
+      case e: FileNotFoundException => throw ConstructError.FileNotFound(e.getMessage)
     }
   }
 }

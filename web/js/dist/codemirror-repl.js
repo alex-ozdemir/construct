@@ -1,10 +1,10 @@
-CodeMirrorREPL.prototype.isBalanced = function () {
+CodeMirror2REPL.prototype.isBalanced = function () {
     return true;
 };
 
-CodeMirrorREPL.prototype.eval = function () {};
+CodeMirror2REPL.prototype.eval = function () {};
 
-function CodeMirrorREPL(textareaId, options) {
+function CodeMirror2REPL(textareaId, options) {
     var textarea = document.getElementById(textareaId);
     options = options || {};
     textarea.value = "";
@@ -36,7 +36,7 @@ function CodeMirrorREPL(textareaId, options) {
         scrollbarStyle: 'native',
     };
 
-    var mirror = CodeMirror.fromTextArea(textarea, options);
+    var mirror = CodeMirror2.fromTextArea(textarea, options);
 
     var history = [];
     var buffer = [];
@@ -203,36 +203,36 @@ function CodeMirrorREPL(textareaId, options) {
 }
 
 // All functions that need access to the editor's state live inside
-// the CodeMirror function. Below that, at the bottom of the file,
+// the CodeMirror2 function. Below that, at the bottom of the file,
 // some utilities are defined.
 
-// CodeMirror is the only global var we claim
-var CodeMirror = (function() {
+// CodeMirror2 is the only global var we claim
+var CodeMirror2 = (function() {
   // This is the function that produces an editor instance. Its
   // closure is used to store the editor state.
-  function CodeMirror(place, givenOptions) {
+  function CodeMirror2(place, givenOptions) {
     // Determine effective options based on given values and defaults.
-    var options = {}, defaults = CodeMirror.defaults;
+    var options = {}, defaults = CodeMirror2.defaults;
     for (var opt in defaults)
       if (defaults.hasOwnProperty(opt))
         options[opt] = (givenOptions && givenOptions.hasOwnProperty(opt) ? givenOptions : defaults)[opt];
 
     // The element in which the editor lives.
     var wrapper = document.createElement("div");
-    wrapper.className = "CodeMirror" + (options.lineWrapping ? " CodeMirror-wrap" : "");
+    wrapper.className = "CodeMirror2" + (options.lineWrapping ? " CodeMirror2-wrap" : "");
     // This mess creates the base DOM structure for the editor.
     wrapper.innerHTML =
       '<div style="overflow: hidden; position: relative; width: 3px; height: 0px;">' + // Wraps and hides input textarea
         '<textarea style="position: absolute; padding: 0; width: 1px; height: 1em" wrap="off" ' +
           'autocorrect="off" autocapitalize="off"></textarea></div>' +
-      '<div class="CodeMirror-scroll" tabindex="-1">' +
+      '<div class="CodeMirror2-scroll" tabindex="-1">' +
         '<div style="position: relative">' + // Set to the height of the text, causes scrolling
           '<div style="position: relative">' + // Moved around its parent to cover visible view
-            '<div class="CodeMirror-gutter"><div class="CodeMirror-gutter-text"></div></div>' +
+            '<div class="CodeMirror2-gutter"><div class="CodeMirror2-gutter-text"></div></div>' +
             // Provides positioning relative to (visible) text origin
-            '<div class="CodeMirror-lines"><div style="position: relative; z-index: 0">' +
+            '<div class="CodeMirror2-lines"><div style="position: relative; z-index: 0">' +
               '<div style="position: absolute; width: 100%; height: 0; overflow: hidden; visibility: hidden;"></div>' +
-              '<pre class="CodeMirror-cursor">&#160;</pre>' + // Absolutely positioned blinky cursor
+              '<pre class="CodeMirror2-cursor">&#160;</pre>' + // Absolutely positioned blinky cursor
               '<div style="position: relative; z-index: -1"></div><div></div>' + // DIVs containing the selection and the actual code
             '</div></div></div></div></div>';
     if (place.appendChild) place.appendChild(wrapper); else place(wrapper);
@@ -259,7 +259,7 @@ var CodeMirror = (function() {
     try { stringWidth("x"); }
     catch (e) {
       if (e.message.match(/runtime/i))
-        e = new Error("A CodeMirror inside a P-style element does not work in Internet Explorer. (innerHTML bug)");
+        e = new Error("A CodeMirror2 inside a P-style element does not work in Internet Explorer. (innerHTML bug)");
       throw e;
     }
 
@@ -349,11 +349,11 @@ var CodeMirror = (function() {
 
     function isLine(l) {return l >= 0 && l < doc.size;}
     // The instance object that we'll return. Mostly calls out to
-    // local functions in the CodeMirror function. Some do some extra
+    // local functions in the CodeMirror2 function. Some do some extra
     // range checking and/or clipping. operation is used to wrap the
     // call so that changes it makes are tracked, and the display is
     // updated afterwards.
-    var instance = wrapper.CodeMirror = {
+    var instance = wrapper.CodeMirror2 = {
       getValue: getValue,
       setValue: operation(setValue),
       getSelection: getSelection,
@@ -489,10 +489,10 @@ var CodeMirror = (function() {
       toggleOverwrite: function() {
         if(overwrite){
           overwrite = false;
-          cursor.className = cursor.className.replace(" CodeMirror-overwrite", "");
+          cursor.className = cursor.className.replace(" CodeMirror2-overwrite", "");
         } else {
           overwrite = true;
-          cursor.className += " CodeMirror-overwrite";
+          cursor.className += " CodeMirror2-overwrite";
         }
       },
 
@@ -817,8 +817,8 @@ var CodeMirror = (function() {
       if (!focused) {
         if (options.onFocus) options.onFocus(instance);
         focused = true;
-        if (wrapper.className.search(/\bCodeMirror-focused\b/) == -1)
-          wrapper.className += " CodeMirror-focused";
+        if (wrapper.className.search(/\bCodeMirror2-focused\b/) == -1)
+          wrapper.className += " CodeMirror2-focused";
         if (!leaveInputAlone) resetInput(true);
       }
       slowPoll();
@@ -832,7 +832,7 @@ var CodeMirror = (function() {
           operation(function(){
             if (bracketHighlighted) { bracketHighlighted(); bracketHighlighted = null; }
           })();
-        wrapper.className = wrapper.className.replace(" CodeMirror-focused", "");
+        wrapper.className = wrapper.className.replace(" CodeMirror2-focused", "");
       }
       clearInterval(blinker);
       setTimeout(function() {if (!focused) shiftSelecting = null;}, 150);
@@ -1343,7 +1343,7 @@ var CodeMirror = (function() {
         function add(left, top, right, height) {
           var rstyle = quirksMode ? "width: " + (!right ? clientWidth : clientWidth - right - left) + "px"
                                   : "right: " + right + "px";
-          html += '<div class="CodeMirror-selected" style="position: absolute; left: ' + left +
+          html += '<div class="CodeMirror2-selected" style="position: absolute; left: ' + left +
             'px; top: ' + top + 'px; ' + rstyle + '; height: ' + height + 'px"></div>';
         }
         if (sel.from.ch && fromPos.y >= 0) {
@@ -1550,7 +1550,7 @@ var CodeMirror = (function() {
     }
 
     function loadMode() {
-      mode = CodeMirror.getMode(options, options.mode);
+      mode = CodeMirror2.getMode(options, options.mode);
       doc.iter(0, doc.size, function(line) { line.stateAfter = null; });
       work = [0];
       startWorker();
@@ -1563,7 +1563,7 @@ var CodeMirror = (function() {
     }
     function wrappingChanged(from, to) {
       if (options.lineWrapping) {
-        wrapper.className += " CodeMirror-wrap";
+        wrapper.className += " CodeMirror2-wrap";
         var perLine = scroller.clientWidth / charWidth() - 3;
         doc.iter(0, doc.size, function(line) {
           if (line.hidden) return;
@@ -1572,7 +1572,7 @@ var CodeMirror = (function() {
         });
         lineSpace.style.width = code.style.width = "";
       } else {
-        wrapper.className = wrapper.className.replace(" CodeMirror-wrap", "");
+        wrapper.className = wrapper.className.replace(" CodeMirror2-wrap", "");
         maxWidth = null; maxLine = "";
         doc.iter(0, doc.size, function(line) {
           if (line.height != 1 && !line.hidden) updateLineHeight(line, 1);
@@ -1777,7 +1777,7 @@ var CodeMirror = (function() {
       }
     }
 
-    var tempId = "CodeMirror-temp-" + Math.floor(Math.random() * 0xffffff).toString(16);
+    var tempId = "CodeMirror2-temp-" + Math.floor(Math.random() * 0xffffff).toString(16);
     function measureLine(line, ch) {
       if (ch == 0) return {top: 0, left: 0};
       var wbr = options.lineWrapping && ch < line.text.length &&
@@ -1961,7 +1961,7 @@ var CodeMirror = (function() {
         if (found) break;
       }
       if (!found) found = {pos: null, match: false};
-      var style = found.match ? "CodeMirror-matchingbracket" : "CodeMirror-nonmatchingbracket";
+      var style = found.match ? "CodeMirror2-matchingbracket" : "CodeMirror2-nonmatchingbracket";
       var one = markText({line: head.line, ch: pos}, {line: head.line, ch: pos+1}, style),
           two = found.pos != null && markText({line: i, ch: found.pos}, {line: i, ch: found.pos + 1}, style);
       var clear = operation(function(){one.clear(); two && two.clear();});
@@ -2112,10 +2112,10 @@ var CodeMirror = (function() {
           !instance.propertyIsEnumerable(ext))
         instance[ext] = extensions[ext];
     return instance;
-  } // (end of function CodeMirror)
+  } // (end of function CodeMirror2)
 
   // The default configuration options.
-  CodeMirror.defaults = {
+  CodeMirror2.defaults = {
     value: "",
     mode: null,
     theme: "default",
@@ -2156,51 +2156,51 @@ var CodeMirror = (function() {
   var win = /Win/.test(navigator.platform);
 
   // Known modes, by name and by MIME
-  var modes = CodeMirror.modes = {}, mimeModes = CodeMirror.mimeModes = {};
-  CodeMirror.defineMode = function(name, mode) {
-    if (!CodeMirror.defaults.mode && name != "null") CodeMirror.defaults.mode = name;
+  var modes = CodeMirror2.modes = {}, mimeModes = CodeMirror2.mimeModes = {};
+  CodeMirror2.defineMode = function(name, mode) {
+    if (!CodeMirror2.defaults.mode && name != "null") CodeMirror2.defaults.mode = name;
     if (arguments.length > 2) {
       mode.dependencies = [];
       for (var i = 2; i < arguments.length; ++i) mode.dependencies.push(arguments[i]);
     }
     modes[name] = mode;
   };
-  CodeMirror.defineMIME = function(mime, spec) {
+  CodeMirror2.defineMIME = function(mime, spec) {
     mimeModes[mime] = spec;
   };
-  CodeMirror.resolveMode = function(spec) {
+  CodeMirror2.resolveMode = function(spec) {
     if (typeof spec == "string" && mimeModes.hasOwnProperty(spec))
       spec = mimeModes[spec];
     else if (typeof spec == "string" && /^[\w\-]+\/[\w\-]+\+xml$/.test(spec))
-      return CodeMirror.resolveMode("application/xml");
+      return CodeMirror2.resolveMode("application/xml");
     if (typeof spec == "string") return {name: spec};
     else return spec || {name: "null"};
   };
-  CodeMirror.getMode = function(options, spec) {
-    var spec = CodeMirror.resolveMode(spec);
+  CodeMirror2.getMode = function(options, spec) {
+    var spec = CodeMirror2.resolveMode(spec);
     var mfactory = modes[spec.name];
-    if (!mfactory) return CodeMirror.getMode(options, "text/plain");
+    if (!mfactory) return CodeMirror2.getMode(options, "text/plain");
     return mfactory(options, spec);
   };
-  CodeMirror.listModes = function() {
+  CodeMirror2.listModes = function() {
     var list = [];
     for (var m in modes)
       if (modes.propertyIsEnumerable(m)) list.push(m);
     return list;
   };
-  CodeMirror.listMIMEs = function() {
+  CodeMirror2.listMIMEs = function() {
     var list = [];
     for (var m in mimeModes)
       if (mimeModes.propertyIsEnumerable(m)) list.push({mime: m, mode: mimeModes[m]});
     return list;
   };
 
-  var extensions = CodeMirror.extensions = {};
-  CodeMirror.defineExtension = function(name, func) {
+  var extensions = CodeMirror2.extensions = {};
+  CodeMirror2.defineExtension = function(name, func) {
     extensions[name] = func;
   };
 
-  var commands = CodeMirror.commands = {
+  var commands = CodeMirror2.commands = {
     selectAll: function(cm) {cm.setSelection({line: 0, ch: 0}, {line: cm.lineCount() - 1});},
     killLine: function(cm) {
       var from = cm.getCursor(true), to = cm.getCursor(false), sel = !posEq(from, to);
@@ -2254,7 +2254,7 @@ var CodeMirror = (function() {
     toggleOverwrite: function(cm) {cm.toggleOverwrite();}
   };
 
-  var keyMap = CodeMirror.keyMap = {};
+  var keyMap = CodeMirror2.keyMap = {};
   keyMap.basic = {
     "Left": "goCharLeft", "Right": "goCharRight", "Up": "goLineUp", "Down": "goLineDown",
     "End": "goLineEnd", "Home": "goLineStartSmart", "PageUp": "goPageUp", "PageDown": "goPageDown",
@@ -2319,7 +2319,7 @@ var CodeMirror = (function() {
     return name == "Ctrl" || name == "Alt" || name == "Shift" || name == "Mod";
   }
 
-  CodeMirror.fromTextArea = function(textarea, options) {
+  CodeMirror2.fromTextArea = function(textarea, options) {
     if (!options) options = {};
     options.value = textarea.value;
     if (!options.tabindex && textarea.tabindex)
@@ -2344,7 +2344,7 @@ var CodeMirror = (function() {
     }
 
     textarea.style.display = "none";
-    var instance = CodeMirror(function(node) {
+    var instance = CodeMirror2(function(node) {
       textarea.parentNode.insertBefore(node, textarea.nextSibling);
     }, options);
     instance.save = save;
@@ -2375,11 +2375,11 @@ var CodeMirror = (function() {
     }
     return nstate;
   }
-  CodeMirror.copyState = copyState;
+  CodeMirror2.copyState = copyState;
   function startState(mode, a1, a2) {
     return mode.startState ? mode.startState(a1, a2) : true;
   }
-  CodeMirror.startState = startState;
+  CodeMirror2.startState = startState;
 
   // The character stream used by a mode's parser.
   function StringStream(string, tabSize) {
@@ -2435,7 +2435,7 @@ var CodeMirror = (function() {
     },
     current: function(){return this.string.slice(this.start, this.pos);}
   };
-  CodeMirror.StringStream = StringStream;
+  CodeMirror2.StringStream = StringStream;
 
   function MarkedText(from, to, className, marker) {
     this.from = from; this.to = to; this.style = className; this.marker = marker;
@@ -3039,9 +3039,9 @@ var CodeMirror = (function() {
     else e.cancelBubble = true;
   }
   function e_stop(e) {e_preventDefault(e); e_stopPropagation(e);}
-  CodeMirror.e_stop = e_stop;
-  CodeMirror.e_preventDefault = e_preventDefault;
-  CodeMirror.e_stopPropagation = e_stopPropagation;
+  CodeMirror2.e_stop = e_stop;
+  CodeMirror2.e_preventDefault = e_preventDefault;
+  CodeMirror2.e_stopPropagation = e_stopPropagation;
 
   function e_target(e) {return e.target || e.srcElement;}
   function e_button(e) {
@@ -3071,12 +3071,12 @@ var CodeMirror = (function() {
       if (disconnect) return function() {node.detachEvent("on" + type, wrapHandler);};
     }
   }
-  CodeMirror.connect = connect;
+  CodeMirror2.connect = connect;
 
   function Delayed() {this.id = null;}
   Delayed.prototype = {set: function(ms, f) {clearTimeout(this.id); this.id = setTimeout(f, ms);}};
 
-  var Pass = CodeMirror.Pass = {toString: function(){return "CodeMirror.Pass";}};
+  var Pass = CodeMirror2.Pass = {toString: function(){return "CodeMirror2.Pass";}};
 
   var gecko = /gecko\/\d{7}/i.test(navigator.userAgent);
   var ie = /MSIE \d/.test(navigator.userAgent);
@@ -3207,7 +3207,7 @@ var CodeMirror = (function() {
       escapeElement.appendChild(document.createTextNode(str));
       return escapeElement.innerHTML;
     };
-  CodeMirror.htmlEscape = htmlEscape;
+  CodeMirror2.htmlEscape = htmlEscape;
 
   // Used to position the cursor after an undo/redo by finding the
   // last edited character.
@@ -3240,7 +3240,7 @@ var CodeMirror = (function() {
     result.push(string.slice(pos));
     return result;
   } : function(string){return string.split(/\r?\n/);};
-  CodeMirror.splitLines = splitLines;
+  CodeMirror2.splitLines = splitLines;
 
   var hasSelection = window.getSelection ? function(te) {
     try { return te.selectionStart != te.selectionEnd; }
@@ -3252,10 +3252,10 @@ var CodeMirror = (function() {
     return range.compareEndPoints("StartToEnd", range) != 0;
   };
 
-  CodeMirror.defineMode("null", function() {
+  CodeMirror2.defineMode("null", function() {
     return {token: function(stream) {stream.skipToEnd();}};
   });
-  CodeMirror.defineMIME("text/plain", "null");
+  CodeMirror2.defineMIME("text/plain", "null");
 
   var keyNames = {3: "Enter", 8: "Backspace", 9: "Tab", 13: "Enter", 16: "Shift", 17: "Ctrl", 18: "Alt",
                   19: "Pause", 20: "CapsLock", 27: "Esc", 32: "Space", 33: "PageUp", 34: "PageDown", 35: "End",
@@ -3264,7 +3264,7 @@ var CodeMirror = (function() {
                   189: "-", 190: ".", 191: "/", 192: "`", 219: "[", 220: "\\", 221: "]", 222: "'", 63276: "PageUp",
                   63277: "PageDown", 63275: "End", 63273: "Home", 63234: "Left", 63232: "Up", 63235: "Right",
                   63233: "Down", 63302: "Insert", 63272: "Delete"};
-  CodeMirror.keyNames = keyNames;
+  CodeMirror2.keyNames = keyNames;
   (function() {
     // Number keys
     for (var i = 0; i < 10; i++) keyNames[i + 48] = String(i);
@@ -3274,5 +3274,5 @@ var CodeMirror = (function() {
     for (var i = 1; i <= 12; i++) keyNames[i + 111] = keyNames[i + 63235] = "F" + i;
   })();
 
-  return CodeMirror;
+  return CodeMirror2;
 })();

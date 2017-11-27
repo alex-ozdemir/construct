@@ -1,6 +1,5 @@
 enablePlugins(ScalaJSPlugin)
 
-
 name := "Construct"
 
 version := "0.1"
@@ -18,5 +17,5 @@ libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.1"
 libraryDependencies += "org.scala-lang.modules" %%% "scala-parser-combinators" % "1.0.5"
 
 // This is an application with a main method
-scalaJSUseMainModuleInitializer := false
-mainClass in Compile := Some("construct.ConstructWebGREPL")
+// scalaJSUseMainModuleInitializer := true
+// mainClass in Compile := Some("construct.ConstructWebGREPL")

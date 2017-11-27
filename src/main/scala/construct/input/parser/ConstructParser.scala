@@ -9,10 +9,12 @@ package construct.input.parser
 import scala.util.parsing.combinator._
 import construct.input.ast._
 
+import scala.util.matching.Regex
+
 object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   // Newlines are significant, and thus omitted from this definition
-  override protected val whiteSpace = """[ \t]+""".r
+  override protected val whiteSpace: Regex = """[ \t]+""".r
 
   // whole program parsing interface
   def apply(s: String): ParseResult[Program] = parseAll(commit(program), s)
@@ -28,7 +30,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val suggestionTake: PackratParser[(Pattern, String)] =
     "let" ~> pattern ~ "=" ~ sug_id ^^ {
-      case pattern ~ "=" ~ id => (pattern, id)
+      case pat ~ "=" ~ i => (pat, i)
     } withFailureMessage
       "Could not parse this suggestion usage"
 
@@ -47,20 +49,20 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
   lazy val path: Parser[String] = """[\w/\.]+""".r
 
   lazy val include: PackratParser[Path] =
-    "include" ~> commit(path) ^^ { case p => Path(p) } withErrorMessage "Expected an include statement"
+    "include" ~> commit(path) ^^ (p => Path(p)) withErrorMessage "Expected an include statement"
 
   lazy val includes: PackratParser[List[Path]] =
     ((rep1sep(include, seps) <~ seps).? ^^ { _.getOrElse(List()) }) withFailureMessage
       "Files can only begin with include statements"
 
   lazy val grepl_instruction: PackratParser[GREPLInstruction] =
-    include ^^ { Include(_) } | givens ^^ { Givens(_) } | returns ^^ {
-      Returns(_)
+    include ^^ { Include } | givens ^^ { Givens } | returns ^^ {
+      Returns
     } | statement
 
   lazy val program: PackratParser[Program] =
-    (seps.*) ~> commit(includes) ~ items <~ sep.* ^^ {
-      case ins ~ items => Program(ins, items)
+    seps.* ~> commit(includes) ~ items <~ sep.* ^^ {
+      case ins ~ is => Program(ins, is)
     }
 
   lazy val items: PackratParser[List[Item]] =
@@ -73,15 +75,15 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val shape: PackratParser[Shape] =
     id ~ sep ~ givens ~ sep ~ repsep(statement, sep) ~ sep ~ returns ^^ {
-      case name ~ s1 ~ givens ~ s2 ~ states ~ s3 ~ returns =>
-        Shape(Construction(name, givens, states, returns))
+      case name ~ s1 ~ givens_ ~ s2 ~ states ~ s3 ~ returns_ =>
+        Shape(Construction(name, givens_, states, returns_))
     } withFailureMessage
       "Malformed shape"
 
   lazy val construction: PackratParser[Construction] =
     id ~ sep ~ givens ~ sep ~ statements ~ sep ~ returns ^^ {
-      case name ~ s1 ~ givens ~ s2 ~ states ~ s3 ~ returns =>
-        Construction(name, givens, states, returns)
+      case name ~ s1 ~ givens_ ~ s2 ~ states ~ s3 ~ returns_ =>
+        Construction(name, givens_, states, returns_)
     }
 
   lazy val returns: PackratParser[List[Identifier]] =
@@ -101,31 +103,29 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
     repsep(statement, sep) withFailureMessage "Malformed sequence of statements"
 
   lazy val statement: PackratParser[Statement] =
-    "let" ~> commit(commit(pattern) ~ "=" ~ commit(expr) ^^ {
+    positioned("let" ~> commit(commit(pattern) ~ "=" ~ commit(expr) ^^ {
       case p ~ "=" ~ e => Statement(p, e)
-    } withFailureMessage "Malformed statement")
+    } withFailureMessage "Malformed statement"))
 
   lazy val expr: PackratParser[Expr] =
-    ("{" ~> commit(repsep(expr, csep) <~ "}" ^^ { SetLit(_) })) |
+    positioned(("{" ~> commit(repsep(expr, csep) <~ "}" ^^ { SetLit })) |
       (id ~ "(" ~ commit(rep1sep(expr, csep) <~ ")") ^^ {
-        case id ~ "(" ~ exprs => FnApp(id, exprs)
+        case i ~ "(" ~ exprs => FnApp(i, exprs)
       } |
         expr ~ "-" ~ commit(expr) ^^ {
           case e1 ~ "-" ~ e2 => Difference(e1, e2)
         } |
-        id ^^ { case id => Exactly(id) }) withFailureMessage "Malformed expression"
+        id ^^ Exactly) withFailureMessage "Malformed expression")
 
   lazy val pattern: PackratParser[Pattern] =
-    pattern_ins ^^ {
-      case pats => if (pats.length == 1) pats.head else Tuple(pats)
-    }
+    positioned(pattern_ins ^^ (pats => if (pats.length == 1) pats.head else Tuple(pats)))
 
   lazy val pattern_in: PackratParser[Pattern] =
-    ("(" ~> commit(pattern_ins <~ ")") ^^ { case patterns => Tuple(patterns) }
+    ("(" ~> commit(pattern_ins <~ ")") ^^ (patterns => Tuple(patterns))
       | id ~ "(" ~ commit(pattern_ins <~ ")") ^^ {
-        case id ~ "(" ~ patterns => Destructor(id, patterns)
+        case i ~ "(" ~ patterns => Destructor(i, patterns)
       }
-      | id ^^ { case id => Id(id) }) withFailureMessage "Found a malformed pattern"
+      | id ^^ Id) withFailureMessage "Found a malformed pattern"
 
   lazy val pattern_ins: PackratParser[List[Pattern]] =
     rep1sep(pattern_in, csep)
@@ -134,5 +134,5 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
     rep1sep(id, csep) withFailureMessage "Expected a comma-separated list of 1 or more identifiers"
 
   lazy val id: Parser[Identifier] =
-    ("""[a-zA-Z_][\w_]*""".r ^^ { case s => Identifier(s) }) withFailureMessage "Expected an identifier"
+    positioned("""[a-zA-Z_][\w_]*""".r ^^ Identifier) withFailureMessage "Expected an identifier"
 }

@@ -6,99 +6,17 @@ package construct.semantics
 
 import construct.engine._
 import construct.input.ast._
-import construct.output.{Drawable, PrettyPrinter}
+import construct.output.Drawable
 
 import scala.collection.mutable
-import scala.xml.parsing.ConstructingParser
+import ConstructError._
+import Value._
 
-sealed abstract class Var {
-  def asPoint: Point = {
-    this match {
-      case Basic(p: Point) => p
-      case _               => throw TypeError(this, "point")
-    }
-  }
-  def asLocus: Locus = {
-    this match {
-      case Basic(v)        => v
-      case Custom(_, _, v) => v
-      case Product(_, v)   => v
-    }
-  }
-  def pretty: String
-}
-
-case class Basic(v: SingleLocus) extends Var {
-  def pretty: String = v.name
-}
-
-case class Custom(ty: Identifier, params: List[Var], v: Locus)
-    extends Var {
-  def pretty: String = ty.name
-}
-case class Product(params: List[Var], v: Locus) extends Var {
-  def pretty: String = params map {_.pretty} mkString("(",", ",")")
-
-  override def equals(obj: scala.Any): Boolean = {
-    obj match {
-      case Product(_, v) => v == this.v
-      case _ => false
-    }
-  }
-}
-
-abstract class ConstructError(val msg: String)
-    extends RuntimeException(s"Error: $msg")
-case class UnknownIdentifier(id: Identifier)
-    extends ConstructError(s"Unkown identifier `${id.name}`")
-case class UnknownIdentifierOfType(id: Identifier, ty: String)
-    extends ConstructError(s"Unkown identifier `${id.name}` of type `$ty`")
-case class TypeError(v: Var, expected: String)
-    extends ConstructError(s"<${v.pretty}> was expected to be a `$expected`!")
-case class ParameterTypeError(param: Parameter, v: Var)
-    extends ConstructError(
-      s"The formal parameter `${param.name.name}` is supposed to have type `${param.ty}` but the actual parameter was <${v.pretty}>!")
-case class UsedIdentifier(id: String)
-    extends ConstructError(s"The identifier `$id` has already been used")
-case class SelfIntersection(fn: FnApp, v: Var)
-    extends ConstructError(s"The function application `${PrettyPrinter.print(fn)}` is trying to intersect <${v.pretty}> with itself")
-case class BuiltinMisuseError(ty: String, from: String)
-    extends ConstructError(s"Cannot construct a `$ty` from $from")
-case class ImplicitGiven(param: Parameter)
-    extends ConstructError(
-      s"Implicit givens must be points, but `${PrettyPrinter.print(param.name)}` is a `${param.ty}`")
-case class RebindError(pattern: Pattern, ident: Identifier)
-    extends ConstructError(s"The pattern `${PrettyPrinter.print(pattern)}` rebinds the variable `${ident.name}`")
-case class ArityError(c: Construction, vars: List[Var])
-    extends ConstructError(
-      s"The construction `${c.name.name}` expects ${c.parameters.length} parameters but got ${vars.length}")
-case class BuiltinArityError(b: Builtins.Function, vars: List[Var])
-    extends ConstructError(
-      s"The builtin `${b.name}` expects ${b.arity} parameters but got ${vars.length}")
-case class BuiltinBindError(b: Builtins.Type, pats: List[Pattern])
-  extends ConstructError(
-    s"The builtin `${b.name}` can be broken into ${b.arity} points, but you tried to break it into ${pats.length} items")
-abstract class BindError(value_ty: String, v: Var, p: Pattern, reason: String) extends ConstructError(
-  s"Cannot bind the $value_ty <${v.pretty}> to the pattern `${PrettyPrinter.print(p)}. $reason"
-)
-case class ProductBindError(union: Tuple, prod: Product)
-    extends BindError("ordered union", prod, union, "The number of loci disagree")
-case class DestructorBindArityError(des: Destructor, v: Var)
-    extends BindError("value", v, des, "The arities disagree")
-case class DestructorBindTypeError(des: Destructor, v: Var)
-    extends BindError("value", v, des, "The types disagree")
-case class VagueBindError(pat: Pattern, v: Var)
-    extends BindError("value", v, pat, "")
-case class FileNotFound(error: String) extends ConstructError(error)
-case class IncludeError(filename: String, error: String)
-    extends ConstructError(s"While reading '$filename' I encountered the following error:\n$error")
-case class WebInclude(file: String)
-    extends ConstructError(s"I cannot include `$file`, as web construct does not support includes")
 class ConstructInterpreter {
 
   val constructions = new mutable.HashMap[Identifier, Construction]
   val constructors = new mutable.HashMap[Identifier, Construction]
-  val vars = new mutable.HashMap[Identifier, Var]
+  val vars = new mutable.HashMap[Identifier, Value]
   val def_points =
     mutable.Queue(Point(0.0, 0.0), Point(1.0, 0.0), Point(1.7, 1.0), Point(2.0, 0.5))
   private val builtins =
@@ -107,7 +25,7 @@ class ConstructInterpreter {
     }
 
   def checkFresh(id: Identifier): Unit =
-    if (vars.keys exists { _ == id }) throw UsedIdentifier(id.name)
+    if (vars.keys exists { _ == id }) throw UsedIdentifier(id)
 
   def lookupPoint(id: Identifier): Point =
     vars.getOrElse(id, {
@@ -124,7 +42,7 @@ class ConstructInterpreter {
       throw UnknownIdentifier(id)
     })
 
-  def lookupVar(id: Identifier): Var =
+  def lookupVar(id: Identifier): Value =
     vars.getOrElse(id, {
       throw UnknownIdentifier(id)
     })
@@ -132,7 +50,7 @@ class ConstructInterpreter {
   def lookupLocus(id: Identifier): Locus =
     lookupVar(id).asLocus
 
-  def mkProduct(params: List[Var]): Product = {
+  def mkProduct(params: List[Value]): Product = {
     Product(params, params.map {
       _.asLocus
     }.foldLeft(Union(Set()): Locus){ _ union _ })
@@ -140,7 +58,7 @@ class ConstructInterpreter {
 
   def run(c: Construction,
           items: Iterable[Item],
-          in_vars: Option[List[Var]] = None): Var = {
+          in_vars: Option[List[Value]] = None): Value = {
     val Construction(_, params, statements, outs) = c
     set_inputs(params, in_vars)
     add_items(items)
@@ -159,27 +77,24 @@ class ConstructInterpreter {
     constructors ++= (items collect { case Shape(c)         => (c.name, c) })
   }
 
-  def add_input(param: Parameter, actual_var: Option[Var]): Unit = {
+  def add_input(param: Parameter, actual_var: Option[Value]): Unit = {
     param match {
-      case Parameter(id, ty) => {
+      case Parameter(id, ty) =>
         actual_var match {
-          case None => {
+          case None =>
             if (ty != Identifier("point"))
               throw ImplicitGiven(param)
             val pt = def_points.dequeue()
             vars += (id -> Basic(pt))
-          }
-          case Some(v) => {
+          case Some(v) =>
             if (getTy(v) != ty)
               throw ParameterTypeError(param, v)
             vars += ((id, v))
-          }
         }
-      }
     }
   }
 
-  def set_inputs(params: Iterable[Parameter], in_vars: Option[List[Var]]): Unit = {
+  def set_inputs(params: Iterable[Parameter], in_vars: Option[List[Value]]): Unit = {
     in_vars match {
       case None => params foreach { add_input(_, None) }
       case Some(ins_list) =>
@@ -189,7 +104,7 @@ class ConstructInterpreter {
     }
   }
 
-  def getTy(v: Var): Identifier = {
+  def getTy(v: Value): Identifier = {
     Identifier(v match {
       case Basic(_: Line)    => "line"
       case Basic(_: Circle)  => "circle"
@@ -201,7 +116,7 @@ class ConstructInterpreter {
     })
   }
 
-  def intersection(fn: FnApp, v1: Var, v2: Var): Var = {
+  def intersection(fn: FnApp, v1: Value, v2: Value): Value = {
     if (v1 == v2) throw SelfIntersection(fn, v1)
     v1.asLocus intersect v2.asLocus match {
       case locus: SingleLocus => Basic(locus)
@@ -209,38 +124,38 @@ class ConstructInterpreter {
     }
   }
 
-  def construct_line(p1: Var, p2: Var): Var = {
+  def construct_line(p1: Value, p2: Value): Value = {
     if (p1 == p2)
-      throw BuiltinMisuseError("line", "identical points")
+      throw BuiltinMisuse("line", "identical points")
     Basic(Line(p1.asPoint, p2.asPoint))
   }
 
-  def construct_circle(c: Var, e: Var): Var = {
+  def construct_circle(c: Value, e: Value): Value = {
     if (c == e)
-      throw BuiltinMisuseError("circle", "identical points")
+      throw BuiltinMisuse("circle", "identical points")
     Basic(Circle(c.asPoint, e.asPoint))
   }
 
-  def construct_ray(p1: Var, p2: Var): Var = {
+  def construct_ray(p1: Value, p2: Value): Value = {
     if (p1 == p2)
-      throw BuiltinMisuseError("ray", "identical points")
+      throw BuiltinMisuse("ray", "identical points")
     Basic(Ray(p1.asPoint, p2.asPoint))
   }
 
-  def construct_segment(p1: Var, p2: Var): Var = {
+  def construct_segment(p1: Value, p2: Value): Value = {
     if (p1 == p2)
-      throw BuiltinMisuseError("segment", "identical points")
+      throw BuiltinMisuse("segment", "identical points")
     Basic(Segment(p1.asPoint, p2.asPoint))
   }
 
-  def fn_call(fn: Identifier, ins: List[Var]): Var = {
+  def fn_call(fn: Identifier, ins: List[Value]): Value = {
     if (constructors contains fn) constructor_call(fn, ins)
     else construction_call(fn, ins)
   }
 
   def procedure_call(fn: Identifier,
-                     ins: List[Var],
-                     lookup: Identifier => Construction): Var = {
+                     ins: List[Value],
+                     lookup: Identifier => Construction): Value = {
     val con = lookup(fn)
     val cons_in_new_env = constructions.values filter { _ != con }
     val shapes_in_new_env = constructors.values filter { _ != con } map {
@@ -253,51 +168,46 @@ class ConstructInterpreter {
     call_eval.run(con, env_cons, Some(ins))
   }
 
-  def constructor_call(fn: Identifier, ins: List[Var]): Var =
+  def constructor_call(fn: Identifier, ins: List[Value]): Value =
     Custom(fn, ins, procedure_call(fn, ins, lookupConstructor).asLocus)
 
-  def construction_call(fn: Identifier, ins: List[Var]): Var =
+  def construction_call(fn: Identifier, ins: List[Value]): Value =
     procedure_call(fn, ins, lookupConstruction)
 
-  def check_arg_count(c: Construction, vars: List[Var]): Unit =
+  def check_arg_count(c: Construction, vars: List[Value]): Unit =
     if (vars.length != c.parameters.length)
-      throw ArityError(c, vars)
+      throw Arity(c, vars)
 
-  def builtin_check_arg_count(b: Builtins.Function, vars: List[Var]): Unit =
+  def builtin_check_arg_count(b: Builtins.Function, vars: List[Value]): Unit =
     if (b.arity != vars.length)
-      throw BuiltinArityError(b, vars)
+      throw BuiltinArity(b, vars)
 
-  def fn_evaluate(fn_app: FnApp): Var = {
+  def fn_evaluate(fn_app: FnApp): Value = {
     val FnApp(fn, arg_exprs) = fn_app
     val arg_vars = arg_exprs map { evaluate }
     lazy val arg0 = arg_vars(0)
     lazy val arg1 = arg_vars(1)
     fn match {
-      case Identifier("intersection") => {
+      case Identifier("intersection") =>
         builtin_check_arg_count(Builtins.Intersection(), arg_vars)
         intersection(fn_app, arg0, arg1)
-      }
-      case Identifier("circle") => {
+      case Identifier("circle") =>
         builtin_check_arg_count(Builtins.Circle(), arg_vars)
         construct_circle(arg0, arg1)
-      }
-      case Identifier("line") => {
+      case Identifier("line") =>
         builtin_check_arg_count(Builtins.Line(), arg_vars)
         construct_line(arg0, arg1)
-      }
-      case Identifier("ray") => {
+      case Identifier("ray") =>
         builtin_check_arg_count(Builtins.Ray(), arg_vars)
         construct_ray(arg0, arg1)
-      }
-      case Identifier("segment") => {
+      case Identifier("segment") =>
         builtin_check_arg_count(Builtins.Segment(), arg_vars)
         construct_segment(arg0, arg1)
-      }
       case fn_id => fn_call(fn_id, arg_vars)
     }
   }
 
-  def evaluate(expr: Expr): Var = {
+  def evaluate(expr: Expr): Value = {
     expr match {
       case fn_app: FnApp => fn_evaluate(fn_app)
       case Exactly(id)   => lookupVar(id)
@@ -307,8 +217,8 @@ class ConstructInterpreter {
     }
   }
 
-  def difference(left: Var, right: Var): Var = {
-    def mkVar(vs: List[Var]): Var =
+  def difference(left: Value, right: Value): Value = {
+    def mkVar(vs: List[Value]): Value =
       vs match {
         case List(x) => x
         case xs      => mkProduct(xs)
@@ -327,7 +237,7 @@ class ConstructInterpreter {
       if (builtins contains fn_id) 2
       else lookupConstruction(fn_id).parameters.length
 
-    def try_call(fn_app: FnApp): Option[Var] = {
+    def try_call(fn_app: FnApp): Option[Value] = {
       try { Some(fn_evaluate(fn_app)) } catch { case _: ConstructError => None }
     }
 
@@ -348,7 +258,7 @@ class ConstructInterpreter {
   }
 
   def filter_query_results(
-      results: Iterable[(Option[Var], Expr)]): Iterable[(Var, Expr)] = {
+      results: Iterable[(Option[Value], Expr)]): Iterable[(Value, Expr)] = {
     val extantResults = results collect {
       case (Some(objs), call) => (objs, call)
     }
@@ -361,7 +271,7 @@ class ConstructInterpreter {
       case (Product(_, locus: PrimativeLocus), _) => (vars.values count {Basic(locus) == _}) == 0
       case (v, _) => (vars.values count { v == _ }) == 0
     }
-    IterTools.uniqueBy(newResults, { x: (Var, Expr) =>
+    IterTools.uniqueBy(newResults, { x: (Value, Expr) =>
       x._1
     })
   }
@@ -371,16 +281,16 @@ class ConstructInterpreter {
     val boundIndents = pattern.boundIdents.toSet
     val reboundIdents = boundIndents intersect vars.keySet
     if (reboundIdents.nonEmpty) {
-      throw RebindError(pattern, reboundIdents.iterator.next())
+      throw Rebind(pattern, reboundIdents.iterator.next())
     }
     pattern_match(pattern, evaluate(expr))
     boundIndents
   }
 
-  def make_named(id: Identifier, v: Var): Drawable =
+  def make_named(id: Identifier, v: Value): Drawable =
     Drawable(id.name, v.asLocus)
 
-  def make_named_split_set(id: String, v: Var): List[Drawable] =
+  def make_named_split_set(id: String, v: Value): List[Drawable] =
     v match {
       case Basic(locus)        => List(Drawable(id, locus))
       case Custom(_, _, locus) => List(Drawable(id, locus))
@@ -394,51 +304,44 @@ class ConstructInterpreter {
     case (id, v) => make_named(id, v)
   }
 
-  def pattern_match(pattern: Pattern, v: Var): Unit = {
+  def pattern_match(pattern: Pattern, v: Value): Unit = {
     (pattern, v) match {
       case (Id(id), v) => vars += (id -> v)
-      case (u @ Tuple(pats), prod@Product(vars, _)) => {
+      case (u @ Tuple(pats), prod@Product(vars, _)) =>
         if (pats.length != vars.toList.length)
           throw ProductBindError(u, prod)
         pats zip vars.toList foreach Function.tupled(pattern_match)
-      }
-      case (d@Destructor(Identifier("circle"), pats), Basic(Circle(c, e))) => {
+      case (d@Destructor(Identifier("circle"), pats), Basic(Circle(c, e))) =>
         if (pats.size != 2) {
           throw BuiltinBindError(Builtins.Circle(), pats)
         }
         pattern_match(pats.head, Basic(c))
         pattern_match(pats.tail.head, Basic(e))
-      }
-      case (d@Destructor(Identifier("line"), pats), Basic(Line(c, e))) => {
+      case (d@Destructor(Identifier("line"), pats), Basic(Line(c, e))) =>
         if (pats.size != 2) {
           throw BuiltinBindError(Builtins.Line(), pats)
         }
         pattern_match(pats.head, Basic(c))
         pattern_match(pats.tail.head, Basic(e))
-      }
-      case (d@Destructor(Identifier("ray"), pats), Basic(Ray(c, e))) => {
+      case (d@Destructor(Identifier("ray"), pats), Basic(Ray(c, e))) =>
         if (pats.size != 2) {
           throw BuiltinBindError(Builtins.Ray(), pats)
         }
         pattern_match(pats.head, Basic(c))
         pattern_match(pats.tail.head, Basic(e))
-      }
-      case (d@Destructor(Identifier("segment"), pats), Basic(Segment(c, e))) => {
+      case (d@Destructor(Identifier("segment"), pats), Basic(Segment(c, e))) =>
         if (pats.size != 2) {
           throw BuiltinBindError(Builtins.Segment(), pats)
         }
         pattern_match(pats.head, Basic(c))
         pattern_match(pats.tail.head, Basic(e))
-      }
-      case (s @ Destructor(ty1, pats), c @ Custom(ty2, vars, _)) => {
+      case (s @ Destructor(ty1, pats), c @ Custom(ty2, vars, _)) =>
         if (ty1 != ty2) throw DestructorBindTypeError(s, c)
         if (pats.length != vars.toList.length)
           throw DestructorBindArityError(s, c)
         pats zip vars.toList foreach Function.tupled(pattern_match)
-      }
-      case (pat, v) => {
+      case (pat, v) =>
         throw VagueBindError(pat, v)
-      }
     }
   }
 

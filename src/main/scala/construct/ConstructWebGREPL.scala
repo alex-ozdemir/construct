@@ -14,12 +14,26 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
 @JSExportTopLevel("ConstructWebGREPL")
-class ConstructWebGREPL(printer: js.Function1[String,Unit]) extends GREPLFrontend {
+class ConstructWebGREPL(printer: js.Function1[String, Unit],
+                        writer: js.Function1[String, Unit],
+                        reader: js.Function0[String])
+    extends GREPLFrontend {
 
-  val libEditor: HTMLTextAreaElement = document.getElementById("lib-editor").asInstanceOf[HTMLTextAreaElement]
-  val loader: Loader = new WebLoader(libEditor)
+  val loader: Loader = new WebLoader(reader)
   val backend: GREPLBackend = new ConstructGREPL(this, loader)
-  var pixelsToPoints: Point => Point = { _ => Point(0,0)}
+  backend.helpMessage =
+    """Metacommands:
+  :h[elp]                     Print this message.
+  :r[eset]                    Empty the canvas and reload base libraries
+  :u[ndo]                     Undo last action.
+  :?                          Print interpreter state (for developers)
+  :w[rite] <construction>     Name the session `construction` and write to library.
+  :s[uggest] [<construction>] Suggest how `construction` might be used,
+                                or clear suggestions."""
+
+  var pixelsToPoints: Point => Point = { _ =>
+    Point(0, 0)
+  }
 
   @JSExport("printToShell")
   override def printToShell(msg: String): Unit = {
@@ -31,7 +45,7 @@ class ConstructWebGREPL(printer: js.Function1[String,Unit]) extends GREPLFronten
     try {
       backend.processLine(line)
     } catch {
-      case e: ConstructError => printToShell(s"Error: ${e.msg}")
+      case e: ConstructError => printToShell(e.fullMsg)
     }
   }
 
@@ -40,11 +54,14 @@ class ConstructWebGREPL(printer: js.Function1[String,Unit]) extends GREPLFronten
     backend.processPointClick(pixelsToPoints(Point(x, y)))
   }
 
-  override def drawToScreen(shapes: List[Drawable], suggestions: List[List[Drawable]]): Unit = {
-    val drawer = new CanvasDrawer(document.getElementById("drawing").asInstanceOf[Canvas], shapes, suggestions)
+  override def drawToScreen(shapes: List[Drawable],
+                            suggestions: List[List[Drawable]]): Unit = {
+    val drawer = new CanvasDrawer(
+      document.getElementById("drawing").asInstanceOf[Canvas],
+      shapes,
+      suggestions)
     pixelsToPoints = drawer.draw()
   }
-
 
   /**
     * Write this program to this file. Return whether the write was successful
@@ -54,7 +71,7 @@ class ConstructWebGREPL(printer: js.Function1[String,Unit]) extends GREPLFronten
     * @return true
     */
   override def write(program: Program, filename: String): Boolean = {
-    libEditor.value = libEditor.value + "\n" + PrettyPrinter.print(program)
+    writer("\n" + PrettyPrinter.print(program))
     true
   }
 
@@ -64,7 +81,6 @@ class ConstructWebGREPL(printer: js.Function1[String,Unit]) extends GREPLFronten
 }
 
 object ConstructWebGREPL {
-
 
   def main(args: Array[String]): Unit = {
     println("Hello world! Welcome to Construct!")

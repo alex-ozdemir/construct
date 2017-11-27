@@ -31,24 +31,32 @@ body {
     display: flex;
     margin: 10px;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: center;
+    font-family: monospace;
 }
 
 #drawing {
-  float: down;
   width: 500px;
   height: 500px;
   border: 1px dashed;
 }
 
+.editor-label {
+  font-family: sans-serif;
+  font-weight: lighter;
+  margin-top: 0;
+  margin-bottom: 0;
+  height: 4vh;
+}
+
 #lib-editor {
-  height: 45vh;
+  height: 40vh;
   width: 100%;
 }
 
 .lib-editor .CodeMirror {
   border: 1px solid;
-  height: 45vh;
+  height: 40vh;
   line-height: 1em;
   font-family: monospace;
 
@@ -56,4 +64,9 @@ body {
   position: relative;
   /* This prevents unwanted scrollbars from showing up on the body and wrapper in IE. */
   overflow: hidden;
+}
+
+.footnote {
+  margin-top: auto;
+  font-size: 10px;
 }

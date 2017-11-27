@@ -1,35 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Construct</title>
-    <link rel="stylesheet" type="text/css" href="https://codemirror.net/lib/codemirror.css">
-    <link rel="stylesheet" href="./styles/index.css">
-    <link rel="stylesheet" href="./styles/codemirror-repl.css">
-    <link rel="stylesheet" href="./styles/themes/eclipse.css">
-    <script src="./js/dist/codemirror-repl.js"></script>
-    <script src="./js/dist/simple.js"></script>
-    <!--<script type="text/javascript" src="https://codemirror.net/addon/edit/matchbrackets.js"></script>-->
-    <script src="./js/index.js"></script>
+  <meta charset="UTF-8">
+  <title>Construct</title>
+  <link rel="stylesheet" href="./styles/index.css">
+  <link rel="stylesheet" href="./styles/codemirror-repl.css">
+  <script src="./js/dist/codemirror-repl.js"></script>
+  <!--
+  <script src="/Users/aozdemir/Downloads/codemirror-5.32.0/lib/codemirror.js"></script>
+  <link rel="stylesheet" href="/Users/aozdemir/Downloads/codemirror-5.32.0/lib/codemirror.css">
+  -->
+  <script src="https://codemirror.net/lib/codemirror.js"></script>
+  <link rel="stylesheet" href="https://codemirror.net/lib/codemirror.css">
+  <link rel="stylesheet" href="https://codemirror.net/theme/base16-light.css">
+  <script type="text/javascript" src="https://codemirror.net/addon/edit/matchbrackets.js"></script>
+  <script src="./js/dist/simple.js"></script>
+  <script src="./js/index.js"></script>
 </head>
 <body>
-    <div class="flex-container-hor">
-        <div class="left">
-            <div id="repl-container" class="repl">
-                <textarea id="repl" autofocus="true"></textarea>
-            </div>
-            <div id="lib-container" class="lib-editor">
-                <textarea id="lib-editor"></textarea>
-            </div>
-        </div>
-        <div class="right">
-            <canvas id="drawing" height="500" width="500"></canvas>
-        </div>
+  <div class="flex-container-hor">
+    <div class="left">
+      <div id="repl-container" class="repl">
+        <h2 class="editor-label"> The Shell </h2>
+        <textarea id="repl" autofocus="true"></textarea>
+      </div>
+      <div id="lib-container" class="lib-editor">
+        <h2 class="editor-label"> The Library Editor </h2>
+        <textarea id="lib-editor"></textarea>
+      </div>
     </div>
+    <div class="right">
+      <p>Click on the canvas to place points</p>
+      <canvas id="drawing" height="500" width="500"></canvas>
+      <div class="buttons">
+        <button id="save-lib">Save Library</button>
+        <input type="file" id="loadsessioninput" onchange="loadSession(this.files[0]); this.files = null" style="display:none" />
+        <button onclick="document.getElementById('loadsessioninput').click()">Load Library</button>
+        <a id="downloadImgLink" onclick="document.getElementById('downloadImgLink').setAttribute('href', document.getElementById('drawing').toDataURL());" download="Construction.png" href="#" target="_blank">Download Image</a>
+      </div>
+      <div class="footnote">
+        <span>Construct is written in Scala; the web version is experimental.</span><br />
+        <span>Direct bug reports and feature reqests <a href="https://github.com/alex-ozdemir/construct/issues">here</a>.</span><br />
+        <span>The project's source may be found <a href="https://github.com/alex-ozdemir/construct">here</a>.</span>
+      </div>
+    </div>
+  </div>
 
-    <!-- Include JavaScript dependencies -->
-    <script type="text/javascript" src="../target/scala-2.11/construct-jsdeps.js"></script>
-    <!-- Include Scala.js compiled code -->
-    <script type="text/javascript" src="../target/scala-2.11/construct-fastopt.js"></script>
+  <!-- Include JavaScript dependencies -->
+  <script type="text/javascript" src="./target/construct-jsdeps.js"></script>
+  <!-- Include Scala.js compiled code -->
+  <script type="text/javascript" src="./target/construct-fastopt.js"></script>
 </body>
 </html>

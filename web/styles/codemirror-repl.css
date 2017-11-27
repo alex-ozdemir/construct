@@ -1,4 +1,4 @@
-.repl .CodeMirror {
+.repl .CodeMirror2 {
   border: 1px solid;
   height: 45vh;
   line-height: 1em;
@@ -10,7 +10,7 @@
   overflow: hidden;
 }
 
-.repl .CodeMirror-scroll {
+.repl .CodeMirror2-scroll {
   font-size: 1em;
   overflow: auto;
   height: 100%;
@@ -21,19 +21,19 @@
 }
 
 /* Vertical scrollbar */
-.repl .CodeMirror-scrollbar {
+.repl .CodeMirror2-scrollbar {
   position: absolute;
   right: 0; top: 0;
   overflow-x: hidden;
   overflow-y: scroll;
   z-index: 5;
 }
-.repl .CodeMirror-scrollbar-inner {
+.repl .CodeMirror2-scrollbar-inner {
   /* This needs to have a nonzero width in order for the scrollbar to appear
      in Firefox and IE9. */
   width: 1px;
 }
-.repl .CodeMirror-scrollbar.cm-sb-overlap {
+.repl .CodeMirror2-scrollbar.cm-sb-overlap {
   /* Ensure that the scrollbar appears in Lion, and that it overlaps the content
      rather than sitting to the right of it. */
   position: absolute;
@@ -42,14 +42,14 @@
   right: 0;
   min-width: 12px;
 }
-.repl .CodeMirror-scrollbar.cm-sb-nonoverlap {
+.repl .CodeMirror2-scrollbar.cm-sb-nonoverlap {
   min-width: 12px;
 }
-.repl .CodeMirror-scrollbar.cm-sb-ie7 {
+.repl .CodeMirror2-scrollbar.cm-sb-ie7 {
   min-width: 18px;
 }
 
-.repl .CodeMirror-gutter {
+.repl .CodeMirror2-gutter {
   position: absolute; left: 0; top: 0;
   z-index: 10;
   background-color: #f7f7f7;
@@ -57,20 +57,20 @@
   min-width: 2em;
   height: 100%;
 }
-.repl .CodeMirror-gutter-text {
+.repl .CodeMirror2-gutter-text {
   color: #aaa;
   text-align: right;
   padding: .4em .2em .4em .4em;
   white-space: pre !important;
   cursor: default;
 }
-.repl .CodeMirror-lines {
+.repl .CodeMirror2-lines {
   padding: .4em;
   white-space: pre;
   cursor: text;
 }
 
-.repl .CodeMirror pre {
+.repl .CodeMirror2 pre {
   -moz-border-radius: 0;
   -webkit-border-radius: 0;
   -o-border-radius: 0;
@@ -86,20 +86,20 @@
   overflow: visible;
 }
 
-.repl .CodeMirror-wrap pre {
+.repl .CodeMirror2-wrap pre {
   word-wrap: break-word;
   white-space: pre-wrap;
   word-break: normal;
 }
-.repl .CodeMirror-wrap .CodeMirror-scroll {
+.repl .CodeMirror2-wrap .CodeMirror2-scroll {
   overflow-x: hidden;
 }
 
-.repl .CodeMirror textarea {
+.repl .CodeMirror2 textarea {
   outline: none !important;
 }
 
-.repl .CodeMirror pre.CodeMirror-cursor {
+.repl .CodeMirror2 pre.CodeMirror2-cursor {
   z-index: 10;
   position: absolute;
   visibility: hidden;
@@ -107,7 +107,7 @@
   border-right: none;
   width: 0;
 }
-.repl .cm-keymap-fat-cursor pre.CodeMirror-cursor {
+.repl .cm-keymap-fat-cursor pre.CodeMirror2-cursor {
   width: auto;
   border: 0;
   background: transparent;
@@ -115,18 +115,18 @@
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#6600c800, endColorstr=#4c00c800);
 }
 /* Kludge to turn off filter in ie9+, which also accepts rgba */
-.repl .cm-keymap-fat-cursor pre.CodeMirror-cursor:not(#nonsense_id) {
+.repl .cm-keymap-fat-cursor pre.CodeMirror2-cursor:not(#nonsense_id) {
   filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
 }
-.repl .CodeMirror pre.CodeMirror-cursor.CodeMirror-overwrite {}
-.repl .CodeMirror-focused pre.CodeMirror-cursor {
+.repl .CodeMirror2 pre.CodeMirror2-cursor.CodeMirror2-overwrite {}
+.repl .CodeMirror2-focused pre.CodeMirror2-cursor {
   visibility: visible;
 }
 
-.repl div.CodeMirror-selected { background: #d9d9d9; }
-.repl .CodeMirror-focused div.CodeMirror-selected { background: #d7d4f0; }
+.repl div.CodeMirror2-selected { background: #d9d9d9; }
+.repl .CodeMirror2-focused div.CodeMirror2-selected { background: #d7d4f0; }
 
-.repl .CodeMirror-searching {
+.repl .CodeMirror2-searching {
   background: #ffa;
   background: rgba(255, 255, 0, .4);
 }
@@ -166,13 +166,13 @@
 
 .repl span.cm-invalidchar {color: #f00;}
 
-.repl div.CodeMirror span.CodeMirror-matchingbracket {color: #0f0;}
-.repl div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
+.repl div.CodeMirror2 span.CodeMirror2-matchingbracket {color: #0f0;}
+.repl div.CodeMirror2 span.CodeMirror2-nonmatchingbracket {color: #f22;}
 
 @media print {
 
   /* Hide the cursor when printing */
-  .repl .CodeMirror pre.CodeMirror-cursor {
+  .repl .CodeMirror2 pre.CodeMirror2-cursor {
     visibility: hidden;
   }
 

@@ -31,7 +31,7 @@ case class Returns(ids: List[Identifier]) extends GREPLInstruction
 
 // let <Pattern> = <Expr>
 case class Statement(pattern: Pattern, expr: Expr)
-    extends GREPLInstruction
+    extends GREPLInstruction with Positional
 
 sealed abstract class Pattern extends Positional {
   def boundIdents: Set[Identifier]
@@ -63,6 +63,6 @@ case class Exactly(id: Identifier) extends Expr {
   def usedIdents: Set[Identifier] = Set(id)
 }
 
-case class Identifier(name: String)
+case class Identifier(name: String) extends Positional
 case class Parameter(name: Identifier, ty: Identifier)
     extends Positional

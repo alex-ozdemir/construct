@@ -1,18 +1,19 @@
 package construct.input.loader
 import construct.input.ast.{Construction, Identifier, Item}
 import construct.input.parser.ConstructParser
-import construct.semantics.{IncludeError, WebInclude}
+import construct.semantics.ConstructError.{IncludeError, WebInclude}
 
 import scala.collection.immutable.HashMap
-import org.scalajs.dom.raw.HTMLTextAreaElement
 
-class WebLoader(val libEditor: HTMLTextAreaElement) extends Loader {
+import scala.scalajs.js
+
+class WebLoader(reader: js.Function0[String]) extends Loader {
 
   override def load(filename: String): (HashMap[Identifier, Item], Option[Construction]) =
     throw WebInclude(filename)
 
   override def init(): (HashMap[Identifier, Item]) = {
-    ConstructParser(libEditor.value) match {
+    ConstructParser(reader()) match {
       case ConstructParser.Success(p, _) =>
         if (p.references.nonEmpty) {
           throw WebInclude(p.references.head.path)

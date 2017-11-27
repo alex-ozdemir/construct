@@ -38,25 +38,26 @@ import construct.output.{Drawable, PNG, PrettyPrinter}
 
 import scala.collection.mutable
 
-abstract class UndoableAction(val indentifiers: Traversable[Identifier])
-object UndoableAction {
-  // The identifier produced by adding this point
-  case class AddPoint(identifier: Identifier) extends UndoableAction(List(identifier))
-  // The identifiers produced by this statement
-  case class Statement(identifiers: Traversable[Identifier]) extends UndoableAction(identifiers)
-}
-
 // A Program Store tracks the statements that the user has done so far
 // This information can be used to extract an equivalent Construct program
 // or to undo a step
 //
 // It also maintains an up-to-date interpreter with the current program
 class ProgramStore(val loader: Loader) {
+
+  private abstract class UndoableAction(val indentifiers: Traversable[Identifier])
+  private object UndoableAction {
+    // The identifier produced by adding this point
+    case class AddPoint(identifier: Identifier) extends UndoableAction(List(identifier))
+    // The identifiers produced by this statement
+    case class Statement(identifiers: Traversable[Identifier]) extends UndoableAction(identifiers)
+  }
+
   val includes = new mutable.MutableList[Path]()
   val parameters = new mutable.MutableList[Parameter]()
   var statements = new mutable.MutableList[Statement]()
   val returns = new mutable.MutableList[Identifier]()
-  val undoableActions = new mutable.ArrayStack[UndoableAction]()
+  private val undoableActions = new mutable.ArrayStack[UndoableAction]()
   var interpreter = new ConstructInterpreter
   interpreter.add_items(loader.init().values)
 
@@ -78,7 +79,7 @@ class ProgramStore(val loader: Loader) {
 
   def addPoint(name: Identifier, pt: engine.Point): Unit = {
     interpreter.add_input(Parameter(name, Identifier("point")),
-                          Some(semantics.Basic(pt)))
+                          Some(semantics.Value.Basic(pt)))
     undoableActions += UndoableAction.AddPoint(name)
   }
   def setParameters(params: List[Parameter]): Unit = {
@@ -155,6 +156,7 @@ trait GREPLFrontend {
 trait GREPLBackend {
   def processLine(line: String): Unit
   def processPointClick(pt: engine.Point): Unit
+  var helpMessage: String
 }
 
 class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GREPLBackend {
@@ -168,6 +170,19 @@ class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GR
   var nextLetter = 'A'
   var clearSuggestions = false
 
+  var helpMessage: String = """Metacommands:
+  :h[elp]                           Print this message.
+  :r[eset]                          Empty the canvas and reload base libraries
+  :d[raw] [<file>]                  Draw canvas to `file`.
+                                      Optionally set output file to `file`.
+                                      Otherwise uses last file or "out.png"
+  :u[ndo]                           Undo last action.
+  :?                                Print interpreter state (for developers)
+  :w[rite] <construction> [<file>]  Name the session `construction` and write to `file`.
+                                      If `file` is missing, writes to "out.con"
+  :s[uggest] [<construction>]       Suggest how `construction` might be used,
+                                      or clear suggestions."""
+
   def drawableSuggestions: List[List[Drawable]] = suggestions map {
     case (drawables, _, _) => drawables.toList
   }
@@ -175,19 +190,7 @@ class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GR
   drawToUI()
 
   def printHelp(): Unit = {
-    val message =
-      """Metacommands:
-  :h[elp]                         Print this message.
-  :r[eset]                        Empty the canvas and reload base libraries
-  :d[raw] [<file>]                Draw canvas to `file`.
-                                    Optionally set output file to `file`.
-                                    Otherwise uses last file or "out.png"
-  :u[ndo]                         Undo last action.
-  :?                              Print interpreter state (for developers)
-  :w[rite] <construction> <file>  Name the session `construction` and write to `file`.
-  :s[uggest] [<construction>]     Suggest how `construction` might be used,
-                                    or clear suggestions."""
-    frontend.printToShell(message)
+    frontend.printToShell(helpMessage)
   }
 
   // Processes a metacommand
@@ -218,8 +221,8 @@ class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GR
 
   def write(command: String): Unit = {
     val splitCommand = command.split(" +")
-    if (splitCommand.length == 3) {
-      val outputFile = splitCommand(2)
+    if (splitCommand.length == 2 || splitCommand.length == 3) {
+      val outputFile = if (splitCommand.length == 3) splitCommand(2) else "out.con"
       val name = splitCommand(1)
       programStore.getProgram(name) match {
         case Left(error) => frontend.printToShell(f"Error: $error")
@@ -271,7 +274,7 @@ class ConstructGREPL(val frontend: GREPLFrontend, val loader: Loader) extends GR
           try {
             programStore.addInclude(s)
           } catch {
-            case e: ConstructError => frontend.printToShell(f"$e")
+            case e: ConstructError => frontend.printToShell(e.fullMsg)
           }
         }
         case Returns(returns)            => programStore.setReturns(returns)
