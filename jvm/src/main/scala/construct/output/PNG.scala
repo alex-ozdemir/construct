@@ -8,25 +8,6 @@ import java.awt.geom._
 
 import construct.output.PixelDrawer._
 
-case class IPoint(x: Int, y: Int)
-case class Scheme(draw: Color, label: Color)
-
-sealed abstract class Color(val r: Int, val g: Int, val b: Int)
-object Color {
-    case class BLUE() extends Color(0, 0, 255)
-    case class RED() extends Color (255, 0, 0)
-    case class CYAN() extends Color (51, 224, 204)
-    case class GREEN() extends Color (0, 153, 51)
-    case class MAGENTA() extends Color (102, 0, 255)
-    case class ORANGE() extends Color (255, 153, 0)
-    case class YELLOW() extends Color (204, 204, 0)
-    case class PINK() extends Color (204, 0, 204)
-    case class BLACK() extends Color (0, 0, 0)
-    case class GRAY() extends Color (128, 128, 128)
-    case class WHITE() extends Color (255, 255, 255)
-}
-
-
 class Drawer(val size: IPoint, val trans: (Point => Point)) {
   val canvas = new BufferedImage(size.x, size.y, BufferedImage.TYPE_INT_RGB)
   val boundary = Union(

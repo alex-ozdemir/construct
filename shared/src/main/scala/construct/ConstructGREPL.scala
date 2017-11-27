@@ -34,7 +34,7 @@ import construct.input.parser.ConstructParser
 import construct.input.loader.Loader
 import construct.input.ast._
 import construct.semantics.{ConstructError, ConstructInterpreter}
-import construct.output.{Drawable, PNG, PrettyPrinter}
+import construct.output.{Drawable, PrettyPrinter}
 
 import scala.collection.mutable
 

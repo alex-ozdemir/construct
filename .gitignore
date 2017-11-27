@@ -1,6 +1,5 @@
 target/
 project/
-web/target
 *.swp
 *.png
 .idea
