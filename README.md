@@ -1,14 +1,18 @@
-[notebook-fork]: https://github.com/hmc-cs111-fall2015/project-notebook/fork
-[CS111-projects]: https://github.com/hmc-cs111-fall2015/hmc-cs111-fall2015.github.io/wiki/Project-links
-
 ![Logo](construct.png)
 
-# Runbook
+# Web Version
 
-To run the project do
+If you're new to Construct, you should use the web version. It is hosted [here][host], and there is an introduction [here][intro].
+
+# Desktop Version
+
+If you're interested in working on Construct itself, it is often easier to test with the desktop version.
+To run the desktop version of the project, install Scala and SBT, and then do:
 
 ```
-sbt 'runMain construct.ConstructGREPL'
+sbt
+> project constructJVM
+> runMain construct.ConstructGREPL
 ```
 
 Then try
@@ -30,3 +34,6 @@ One can also use the whole-file processor with:
 ```
 sbt 'runMain construct.ConstructC example.con'
 ```
+
+[intro]: https://github.com/alex-ozdemir/construct/wiki/Introduction-to-Construct
+[host]: https://www.cs.hmc.edu/~aozdemir/construct/
