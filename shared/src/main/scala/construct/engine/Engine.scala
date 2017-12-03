@@ -18,6 +18,8 @@
 
 package construct.engine
 
+import scala.util.Random
+
 object Closeness {
   val EPSILON = 0.000001
   implicit class CloseDouble(x: Double) {
@@ -33,10 +35,10 @@ sealed abstract class Locus {
     asLines == List() && asCircles == List() && asPoints != List()
   def intersect(other: Locus): Locus
   def union(other: Locus): Locus
-  def choose: Option[Point]
   def contains(that: Point): Boolean
-  def empty: Boolean = choose.isEmpty
   def asListOfSingle: List[SingleLocus]
+  def distanceTo(pt: Point): Double
+  def pointsIterator(): Iterator[Point]
 }
 
 sealed abstract class SingleLocus extends Locus {
@@ -50,7 +52,6 @@ sealed abstract class SingleLocus extends Locus {
       }
   }
   def contains(that: Point): Boolean
-  def choose: Option[Point]
   def name: String
   override def asListOfSingle: List[SingleLocus] = List(this)
 }
@@ -65,7 +66,6 @@ sealed abstract class PrimativeLocus extends SingleLocus {
   def intersectPrim(that: PrimativeLocus): Locus =
     Intersection.intersect(this, that)
   def contains(that: Point): Boolean
-  def choose: Option[Point]
 }
 
 case class Union(set: Set[SingleLocus]) extends Locus {
@@ -78,8 +78,9 @@ case class Union(set: Set[SingleLocus]) extends Locus {
 
   override def equals(that: Any): Boolean =
     that match {
-      case union: Union => set == union.set
-      case x            => if (set.size == 1) x == set.toList(0) else false
+      case union: Union   => set == union.set
+      case x: SingleLocus => if (set.size == 1) x == set.toList.head else false
+      case _              => false
     }
 
   def intersect(that: Locus): Locus = set map { _ intersect that } reduce {
@@ -95,13 +96,36 @@ case class Union(set: Set[SingleLocus]) extends Locus {
         case union: Union        => Union(union.set ++ set)
       }
 
-  def choose: Option[Point] = if (set.isEmpty) None else set.head.choose
-
   def contains(that: Point): Boolean = set exists { _ contains that }
 
   override def asListOfSingle: List[SingleLocus] = set.toList
 
-  override def empty: Boolean = set.isEmpty
+  override def pointsIterator(): Iterator[Point] = {
+    class UnionIter(var vec: Vector[Iterator[Point]]) extends Iterator[Point] {
+      var nextItem: Option[Point] = None
+      def pullIntoNext(): Unit = {
+        while (nextItem.isEmpty && vec.nonEmpty) {
+          val c = vec(Random.nextInt(vec.size))
+          if (c.hasNext) {
+            nextItem = Some(c.next)
+          } else {
+            vec = vec filter { _ != c }
+          }
+        }
+      }
+      override def hasNext: Boolean = {
+        pullIntoNext()
+        nextItem.nonEmpty
+      }
+      override def next(): Point = {
+        pullIntoNext()
+        nextItem.getOrElse { throw new RuntimeException("Empty iterator!") }
+      }
+    }
+    new UnionIter(Vector() ++ set map { _.pointsIterator() })
+  }
+
+  override def distanceTo(pt: Point): Double = (set map {_ distanceTo pt}).min
 }
 
 case class Point(x: Double, y: Double) extends SingleLocus {
@@ -116,7 +140,6 @@ case class Point(x: Double, y: Double) extends SingleLocus {
   def intersect(other: Locus): Locus =
     if (other contains this) this else Union(Set())
   def name: String = "point"
-  def choose: Option[Point] = Some(this)
   override def asPoints: List[Point] = List(this)
   def +(that: Point): Point = Point(this.x + that.x, this.y + that.y)
   def -(that: Point): Point = Point(this.x - that.x, this.y - that.y)
@@ -140,6 +163,10 @@ case class Point(x: Double, y: Double) extends SingleLocus {
   def unary_!(): Double = math.sqrt(x * x + y * y)
   def angle: Double = math.atan2(y, x)
   def contains(that: Point): Boolean = this == that
+
+  override def distanceTo(pt: Point): Double = !(pt - this)
+
+  override def pointsIterator(): Iterator[Point] = Iterator.single(this)
 }
 
 case class Circle(c: Point, p: Point) extends PrimativeLocus {
@@ -162,9 +189,16 @@ case class Circle(c: Point, p: Point) extends PrimativeLocus {
 
   def contains(pt: Point): Boolean = !(pt - c) === r
 
-  def choose: Option[Point] = Some(p)
   def name: String = "circle"
   override def asCircles: List[Circle] = List(this)
+
+  override def pointsIterator(): Iterator[Point] = {
+    Iterator.continually {
+      c + (p - c).rotate(Random.nextDouble() * 2 * Math.PI)
+    }
+  }
+
+  override def distanceTo(pt: Point): Double = Math.abs(!(c - pt) - r)
 }
 
 case class Line(p1: Point, p2: Point) extends PrimativeLocus {
@@ -179,23 +213,28 @@ case class Line(p1: Point, p2: Point) extends PrimativeLocus {
 
   override def equals(other: Any): Boolean = {
     other match {
-      case line: Line => {
+      case line: Line =>
         (standard_form, line.standard_form) match {
           case (Some((s, y)), Some((s_other, y_other))) =>
-            s == s_other && y == y_other
+            s === s_other && y === y_other
           case (None, None) => line.p1.x === p1.x
           case _            => false
         }
-      }
       case _ => false
     }
   }
 
   def contains(pt: Point): Boolean = !((pt - p1) reject (p2 - p1)) === 0
 
-  def choose: Option[Point] = Some(p2)
   def name: String = "line"
   override def asLines: List[Line] = List(this)
+
+  override def pointsIterator(): Iterator[Point] = {
+    val center = (p1 + p2) * 0.5
+    Iterator.continually { center + (p1 - p2) * Random.nextGaussian() * 0.5 }
+  }
+
+  override def distanceTo(pt: Point): Double = !(pt - p1).reject(p2 - p1)
 }
 
 case class Ray(p1: Point, p2: Point) extends PrimativeLocus {
@@ -204,22 +243,30 @@ case class Ray(p1: Point, p2: Point) extends PrimativeLocus {
 
   def asLine: Line = Line(p1, p2)
 
-  def param(pt: Point): Option[Double] = (pt - p1) / (p2 - p1)
+  val v: Point = p2 - p1
+
+  def param(pt: Point): Option[Double] = (pt - p1) / v
 
   override def equals(other: Any): Boolean = {
     other match {
-      case ray: Ray => {
+      case ray: Ray =>
         (p1 == ray.p1) && (angle === ray.angle)
-      }
       case _ => false
     }
   }
 
   def contains(pt: Point): Boolean =
-    (!((pt - p1) reject (p2 - p1))) === 0 && param(pt).get >= 0
+    (!((pt - p1) reject v)) === 0 && param(pt).get >= 0
   def name: String = "ray"
 
-  def choose: Option[Point] = Some(p2)
+  override def pointsIterator(): Iterator[Point] =
+    Iterator.continually { p1 + v * Math.abs(Random.nextGaussian()) }
+
+  override def distanceTo(pt: Point): Double = {
+    val vec = pt - p1
+    val along_ray = vec <> v > 0
+    if (along_ray) !vec.reject(v) else !v
+  }
 }
 
 case class Segment(p1: Point, p2: Point) extends PrimativeLocus {
@@ -228,23 +275,34 @@ case class Segment(p1: Point, p2: Point) extends PrimativeLocus {
 
   def asLine: Line = Line(p1, p2)
 
-  def param(pt: Point): Option[Double] = (pt - p1) / (p2 - p1)
+  def param(pt: Point): Double = ((pt - p1) / (p2 - p1)).get
 
   override def equals(other: Any): Boolean = {
     other match {
-      case that: Segment => {
+      case that: Segment =>
         (this.p1 == that.p1 && this.p2 == that.p2) ||
           (this.p1 == that.p2 && this.p2 == that.p1)
-      }
       case _ => false
     }
   }
 
   def contains(pt: Point): Boolean =
-    !((pt - p1) reject (p2 - p1)) === 0 && param(pt).get >= 0 && param(pt).get <= 1
+    !((pt - p1) reject (p2 - p1)) === 0 && param(pt) >= 0 && param(pt) <= 1
 
-  def choose: Option[Point] = Some(p2)
   def name: String = "segment"
+
+  override def pointsIterator(): Iterator[Point] =
+    Iterator.continually { p1 + (p2 - p1) * Random.nextDouble() }
+
+  override def distanceTo(pt: Point): Double = if (param(pt) < 1) {
+    if (param(pt) < 0) {
+      !(pt - p1)
+    } else {
+      !(pt - p1).reject(p2 - p1)
+    }
+  } else {
+    !(p2 - pt)
+  }
 }
 
 // Holds all the intersection logic for primitives
@@ -292,7 +350,7 @@ object Intersection {
   def CircleLine(A: Circle, B: Line): Locus = intersect(B, A)
   def LineCircle(D: Line, E: Circle): Locus = {
     D.standard_form match {
-      case Some((m, b)) => {
+      case Some((m, b)) =>
         // Line  : y = m * x + b
         // Circle: (y - c.y)^2 + (x - c.x)^2 = r^2
         //
@@ -312,8 +370,7 @@ object Intersection {
           val x2 = (-B + math.sqrt(desc)) / (2 * A)
           Union(Set(Point(x1, m * x1 + b), Point(x2, m * x2 + b)))
         }
-      }
-      case None => {
+      case None =>
         val line_x = D.p1.x
         if (line_x === E.c.x - E.r || line_x === E.c.x + E.r) {
           Point(line_x, E.c.y)
@@ -324,12 +381,11 @@ object Intersection {
         } else {
           Union(Set())
         }
-      }
     }
   }
   def LineLine(A: Line, B: Line): Locus = {
     (A.standard_form, B.standard_form) match {
-      case (Some((s, y)), Some((bs, by))) => {
+      case (Some((s, y)), Some((bs, by))) =>
         if (s === bs)
           if (y === by)
             A
@@ -339,15 +395,13 @@ object Intersection {
           val x = (y - by) / (bs - s)
           Point(x, y + s * x)
         }
-      }
       case (None, Some((_, _)))      => intersect(B, A)
       case (Some((slope, y0)), None) => Point(B.p1.x, y0 + B.p1.x * slope)
-      case (None, None) => {
+      case (None, None) =>
         if (A.p1.x === B.p1.x)
           A
         else
           Union(Set())
-      }
     }
   }
   def RayRay(A: Ray, B: Ray): Locus = {
@@ -382,12 +436,11 @@ object Intersection {
   def CircleRay(A: Circle, B: Ray): Locus = intersect(B, A)
   def RayCircle(A: Ray, B: Circle): Locus = {
     intersect(A.asLine, B) match {
-      case Union(ps) => {
+      case Union(ps) =>
         Union(ps filter {
           case p: Point => A contains p
           case _        => false
         })
-      }
       case p: Point => if (A contains p) p else Union(Set())
       case _        => throw new Error("RayCircle bug")
     }
@@ -396,18 +449,15 @@ object Intersection {
     if ((A.angle + math.Pi) % math.Pi === (B.angle + math.Pi) % math.Pi) {
       (B contains A.p1, B contains A.p2) match {
         case (true, true) => A
-        case (true, false) => {
+        case (true, false) =>
           if (A contains B.p1) Segment(A.p1, B.p1)
           else Segment(A.p1, B.p2)
-        }
-        case (false, true) => {
+        case (false, true) =>
           if (A contains B.p1) Segment(A.p2, B.p1)
           else Segment(A.p2, B.p2)
-        }
-        case (false, false) => {
+        case (false, false) =>
           if ((A contains B.p1) && (A contains B.p2)) B
           else Union(Set())
-        }
       }
     } else {
       val List(p) = intersect(A.asLine, B.asLine).asPoints

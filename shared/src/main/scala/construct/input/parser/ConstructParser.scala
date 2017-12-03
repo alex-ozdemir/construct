@@ -75,7 +75,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val shape: PackratParser[Shape] =
     id ~ sep ~ givens ~ sep ~ repsep(statement, sep) ~ sep ~ returns ^^ {
-      case name ~ s1 ~ givens_ ~ s2 ~ states ~ s3 ~ returns_ =>
+      case name ~ _ ~ givens_ ~ _ ~ states ~ _ ~ returns_ =>
         Shape(Construction(name, givens_, states, returns_))
     } withFailureMessage
       "Malformed shape"
@@ -88,7 +88,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val returns: PackratParser[List[Identifier]] =
     "return" ~> commit(
-      repsep(id, csep) withFailureMessage "Expected a list of identifiers")
+      repsep(id, csep) withFailureMessage "Expected a list of expressions")
 
   lazy val givens: PackratParser[List[Parameter]] =
     "given" ~> commit(

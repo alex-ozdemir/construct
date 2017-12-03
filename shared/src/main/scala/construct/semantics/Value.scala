@@ -19,6 +19,7 @@ sealed abstract class Value {
     }
   }
   def pretty: String
+  def pointsIterator: Iterator[Point] = asLocus.pointsIterator()
 }
 
 object Value {
@@ -35,7 +36,7 @@ object Value {
 
     override def equals(obj: scala.Any): Boolean = {
       obj match {
-        case Product(_, v) => v == this.v
+        case Product(_, u) => u == v
         case _             => false
       }
     }

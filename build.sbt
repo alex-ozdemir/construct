@@ -9,7 +9,7 @@ lazy val construct = crossProject.in(file(".")).
   settings(
     // other settings
     name := "Construct",
-    version := "0.2",
+    version := "0.2.0",
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature"),
     libraryDependencies += "org.scala-lang.modules" %%% "scala-parser-combinators" % "1.0.5",

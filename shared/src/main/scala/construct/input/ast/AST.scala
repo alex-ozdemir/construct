@@ -54,7 +54,7 @@ case class FnApp(fn: Identifier, args: List[Expr]) extends Expr {
   def usedIdents: Set[Identifier] = (args flatMap { _.usedIdents }).toSet
 }
 case class Difference(left: Expr, right: Expr) extends Expr {
-  def usedIdents: Set[Identifier] = (left.usedIdents | right.usedIdents).toSet
+  def usedIdents: Set[Identifier] = left.usedIdents | right.usedIdents
 }
 case class SetLit(items: List[Expr]) extends Expr {
   def usedIdents: Set[Identifier] = (items flatMap { _.usedIdents }).toSet

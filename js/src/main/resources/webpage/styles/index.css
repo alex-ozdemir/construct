@@ -28,11 +28,11 @@ body {
 }
 
 .right {
-    display: flex;
-    margin: 10px;
-    flex-direction: column;
-    justify-content: center;
-    font-family: monospace;
+  display: flex;
+  margin: 10px;
+  flex-direction: column;
+  justify-content: center;
+  font-family: monospace;
 }
 
 #drawing {
