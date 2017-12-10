@@ -1,6 +1,6 @@
 package construct.semantics
 
-import construct.engine.{SingleLocus, Union}
+import construct.engine.{Point, SingleLocus, Union}
 import construct.engine
 import construct.input.ast.{Identifier, Pattern}
 import construct.semantics.ConstructError.{BuiltinArity, BuiltinMisuse}
@@ -17,7 +17,7 @@ object Builtins {
     t.id -> t
   }: _*)
 
-  val functions: List[Function] = types ++ List(Intersection())
+  val functions: List[Function] = types ++ List(Intersection(), Choose())
   val functionsMap: Map[Identifier, Function] = HashMap(functions map { f =>
     f.id -> f
   }: _*)
@@ -39,7 +39,26 @@ object Builtins {
       check_arity(args)
       (args(0), args(1))
     }
+
+    //noinspection ZeroIndexToHead because we want to emphasize argument order
+    def get_one_arg(args: List[Value]): Value = {
+      check_arity(args)
+      args.head
+    }
   }
+
+  case class Choose() extends Function("choose", 1) {
+    override def execute(args: List[Value]): Value = {
+      mk_choice(args) map Basic getOrElse Value.EMPTY
+    }
+
+    def mk_choice(args: List[Value]): Option[Point] = {
+      val arg = get_one_arg(args)
+      val iter = arg.pointsIterator
+      if (iter.hasNext) Some(iter.next()) else None
+    }
+  }
+
 
   case class Intersection() extends Function("intersection", 2) {
     override def execute(

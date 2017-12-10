@@ -125,7 +125,10 @@ case class Union(set: Set[SingleLocus]) extends Locus {
     new UnionIter(Vector() ++ set map { _.pointsIterator() })
   }
 
-  override def distanceTo(pt: Point): Double = (set map {_ distanceTo pt}).min
+  override def distanceTo(pt: Point): Double = {
+    val dists = set map {_ distanceTo pt}
+    if (dists.isEmpty) Double.PositiveInfinity else dists.min
+  }
 }
 
 case class Point(x: Double, y: Double) extends SingleLocus {
@@ -231,7 +234,7 @@ case class Line(p1: Point, p2: Point) extends PrimativeLocus {
 
   override def pointsIterator(): Iterator[Point] = {
     val center = (p1 + p2) * 0.5
-    Iterator.continually { center + (p1 - p2) * Random.nextGaussian() * 0.5 }
+    Iterator.continually { center + (p1 - p2) * Random.nextGaussian() }
   }
 
   override def distanceTo(pt: Point): Double = !(pt - p1).reject(p2 - p1)
@@ -260,7 +263,7 @@ case class Ray(p1: Point, p2: Point) extends PrimativeLocus {
   def name: String = "ray"
 
   override def pointsIterator(): Iterator[Point] =
-    Iterator.continually { p1 + v * Math.abs(Random.nextGaussian()) }
+    Iterator.continually { p1 + v * 1.5 * Math.abs(Random.nextGaussian()) }
 
   override def distanceTo(pt: Point): Double = {
     val vec = pt - p1

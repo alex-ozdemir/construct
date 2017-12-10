@@ -1,6 +1,6 @@
 package construct.semantics
 
-import construct.engine.{Locus, Point, SingleLocus}
+import construct.engine.{Locus, Point, SingleLocus, Union}
 import construct.input.ast.Identifier
 import construct.semantics.ConstructError.TypeError
 
@@ -41,4 +41,5 @@ object Value {
       }
     }
   }
+  val EMPTY: Value = Product(List(), Union(Set()))
 }

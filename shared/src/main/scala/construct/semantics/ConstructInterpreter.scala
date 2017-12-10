@@ -33,6 +33,12 @@ class ConstructInterpreter {
   def lookupVar(id: Identifier): Value =
     vars.getOrElse(id, throw UnknownIdentifier(id))
 
+  // The shortest distance between *pt* and some value.
+  def distance_to(pt: Point, exclude: List[Value]): Double = {
+    val dists = vars.values filter { !exclude.contains(_) } map { _.asLocus.distanceTo(pt) }
+    if (dists.isEmpty) Double.PositiveInfinity else dists.min
+  }
+
   def lookupLocus(id: Identifier): Locus =
     lookupVar(id).asLocus
 
@@ -142,7 +148,20 @@ class ConstructInterpreter {
       evaluate
     }
     Builtins.functionsMap.get(fn_id) map {
-      _.execute(arg_values)
+      case choose: Builtins.Choose =>
+        var dist = 1.0
+        while (true) {
+          choose.mk_choice(arg_values) match {
+            case None => return Value.EMPTY
+            case Some(pt) =>
+              println(pt)
+              if (distance_to(pt, arg_values) > dist) return Basic(pt)
+          }
+          dist *= 0.8
+        }
+        // unreachable
+        Value.EMPTY
+      case b => b.execute(arg_values)
     } getOrElse {
       fn_call(fn_id, arg_values)
     }
