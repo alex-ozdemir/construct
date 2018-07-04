@@ -108,17 +108,23 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
     } withFailureMessage "Malformed statement"))
 
   lazy val expr: PackratParser[Expr] =
-    positioned(("{" ~> commit(repsep(expr, csep) <~ "}" ^^ { SetLit })) |
-      (id ~ "(" ~ commit(rep1sep(expr, csep) <~ ")") ^^ {
-        case i ~ "(" ~ exprs => FnApp(i, exprs)
-      } |
-        expr ~ "-" ~ commit(expr) ^^ {
-          case e1 ~ "-" ~ e2 => Difference(e1, e2)
-        } |
-        id ^^ Exactly) withFailureMessage "Malformed expression")
+    positioned(
+      (exprNoDiff ~ "-" ~ commit(expr) ^^ {
+        case e1 ~ "-" ~ e2 => Difference(e1, e2)
+      }) | exprNoDiff
+    )
+
+  lazy val exprNoDiff: PackratParser[Expr] =
+    positioned(
+      ("{" ~> commit(repsep(expr, csep) <~ "}" ^^ { SetLit }) withErrorMessage "Malformed set literal") |
+        (id ~ "(" ~ rep1sep(expr, csep) <~ ")" ^^ {
+          case i ~ "(" ~ exprs => FnApp(i, exprs)
+        }) |
+        (id ^^ Exactly) withFailureMessage "Malformed expression")
 
   lazy val pattern: PackratParser[Pattern] =
-    positioned(pattern_ins ^^ (pats => if (pats.length == 1) pats.head else Tuple(pats)))
+    positioned(
+      pattern_ins ^^ (pats => if (pats.length == 1) pats.head else Tuple(pats)))
 
   lazy val pattern_in: PackratParser[Pattern] =
     ("(" ~> commit(pattern_ins <~ ")") ^^ (patterns => Tuple(patterns))

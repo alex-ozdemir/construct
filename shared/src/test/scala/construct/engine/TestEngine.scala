@@ -1,10 +1,9 @@
 package construct.engine
 
-//import scala.language.implicitConversions
 import org.scalatest.Matchers
 import org.scalatest.FunSuite
 
-class EngineTest extends FunSuite with Matchers {
+class TestEngine extends FunSuite with Matchers {
 
   test("Parallel Lines") {
     val l1 = Line(Point(0, 0), Point(1, 1))
