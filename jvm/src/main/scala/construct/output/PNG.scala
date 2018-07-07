@@ -8,7 +8,7 @@ import java.awt.geom._
 
 import construct.output.PixelDrawer._
 
-class Drawer(val size: IPoint, val trans: (Point => Point)) {
+class Drawer(val size: IPoint, val trans: Point => Point) {
   val canvas = new BufferedImage(size.x, size.y, BufferedImage.TYPE_INT_RGB)
   val boundary = Union(
     Set(
@@ -41,11 +41,10 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
       case Line(p1, p2)    => drawLine(name, p1, p2, sc)
       case Ray(p1, p2)     => drawRay(name, p1, p2, sc)
       case Segment(p1, p2) => drawSegment(name, p1, p2, sc)
-      case Union(loci) => {
+      case Union(loci) =>
         val loci_list = loci.toList
-        loci_list.headOption map { Drawable(name, _) } map { draw(_, sc) }
+        loci_list.headOption map { Drawable(name, _) } foreach { draw(_, sc) }
         loci_list.tail map { Drawable("", _) } foreach { draw(_, sc) }
-      }
     }
   }
 
@@ -95,7 +94,7 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
     val buf = 10
     val thick = 1.5f
     val p1t @ Point(x1, y1) = trans(p1)
-    val p2t @ Point(x2, y2) = trans(p2)
+    val p2t = trans(p2)
     val List(Point(x3, y3)) = (Ray(p1t, p2t) intersect boundary).asPoints
     val Point(lx, ly) = Point(buf, buf) + (p2t - p1t) / 3 + p1t
     graphics.setColor(colorToSwing(scheme.draw))
@@ -109,8 +108,8 @@ class Drawer(val size: IPoint, val trans: (Point => Point)) {
   def drawLine(name: String, p1: Point, p2: Point, scheme: Scheme) = {
     val buf = 10
     val thick = 1.5f
-    val p1t @ Point(x1, y1) = trans(p1)
-    val p2t @ Point(x2, y2) = trans(p2)
+    val p1t = trans(p1)
+    val p2t = trans(p2)
     val List(Point(x3, y3), Point(x4, y4)) =
       (Line(p1t, p2t) intersect boundary).asPoints
     val Point(lx, ly) = Point(buf, buf) + (p1t + p2t) / 2
@@ -167,7 +166,7 @@ object PNG {
     (drawer.get, revereseHomography)
   }
 
-  def dumpTmp(perm: List[Drawable], tmp: List[List[Drawable]], file: String) = {
+  def dumpTmp(perm: List[Drawable], tmp: List[List[Drawable]], file: String): Boolean = {
     val size = IPoint(500, 500)
     val border = 25
     val targetBounds = Box(border, border, size.x - border, size.y - border)
@@ -175,7 +174,7 @@ object PNG {
     val targetBox = bounds fill targetBounds
     val trans = homography(bounds, targetBox)
     val drawer = new Drawer(size, trans)
-    perm foreach { drawer.drawPerm(_) }
+    perm foreach { drawer.drawPerm }
     tmp zip (tmpColors map { c =>
       Scheme(c(), c())
     }) foreach {

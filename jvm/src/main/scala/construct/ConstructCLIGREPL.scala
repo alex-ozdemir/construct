@@ -21,18 +21,19 @@ object ConstructCLIGREPL extends App with EvalLoop with GREPLFrontend {
   var grepl: GREPLBackend = _
 
   // Initialize UI
-  val ui = new UI( pixelsToPoints(_) foreach { grepl.processPointClick } )
+  val ui = new UI(pixelsToPoints(_) foreach { grepl.processPointClick })
   ui.visible = true
 
   val loader: Loader = new FileSystemLoader
-  grepl = new ConstructGREPL(this, loader)
+  grepl = new GREPLBackendImpl(this, loader)
 
   override def printToShell(msg: String): Unit = {
     println(msg)
   }
 
-  override def drawToScreen(shapes: List[Drawable], suggestions: List[List[Drawable]]): Unit = {
-    val (image, revereseHomography) = PNG.getTmp( shapes, suggestions )
+  override def drawToScreen(shapes: List[Drawable],
+                            suggestions: List[List[Drawable]]): Unit = {
+    val (image, revereseHomography) = PNG.getTmp(shapes, suggestions)
     ui.setImage(image)
     ui.repaint()
     pixelsToPoints = { pt =>
@@ -41,8 +42,7 @@ object ConstructCLIGREPL extends App with EvalLoop with GREPLFrontend {
   }
 
   override def draw(filename: String, drawables: List[Drawable]): Unit = {
-    def draw(): Boolean =
-      PNG.dump(drawables, filename)
+    PNG.dump(drawables, filename)
   }
 
   override def write(program: Program, filename: String): Boolean = {
@@ -96,4 +96,3 @@ class UI(onclick: java.awt.Point => Unit) extends MainFrame {
     case event.MouseClicked(_, p, _, _, _) => onclick(p)
   }
 }
-

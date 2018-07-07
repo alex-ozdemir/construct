@@ -9,11 +9,11 @@ scalacOptions ++= Seq(
   "-deprecation",
   "-feature",
   "-Xfatal-warnings",
-  "-usejavacp",
+  "-Xlint:all",
 )
 
-val packagePage = taskKey[Unit]("Package the webpage")
-val testPage = taskKey[Unit]("Build a test version of the webpage")
+lazy val packagePage = taskKey[Unit]("Package an optimized version of the webpage")
+lazy val testPage = taskKey[Unit]("Quickly build a test version of the webpage")
 
 lazy val construct =
 // select supported platforms

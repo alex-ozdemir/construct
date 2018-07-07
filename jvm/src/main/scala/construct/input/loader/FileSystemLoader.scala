@@ -45,7 +45,7 @@ class FileSystemLoader() extends Loader {
         val program =
           io.Source.fromFile(path.toString).getLines.reduceLeft(_ + "\n" + _)
         ConstructParser(program) match {
-          case ConstructParser.Success(p, _) => {
+          case ConstructParser.Success(p, _) =>
             val Program(imports, these_items) = p
             val cons = these_items collect { case c: Construction => c }
             if (first.isEmpty && cons.nonEmpty) first = Some(cons(0))
@@ -62,10 +62,8 @@ class FileSystemLoader() extends Loader {
             } map { i =>
               (i.name, i)
             }
-          }
-          case e: ConstructParser.NoSuccess => {
+          case e: ConstructParser.NoSuccess =>
             throw ConstructError.IncludeError(path.toString, s"parser error: ${e.msg}\n${e.next.pos.longString}")
-          }
         }
       }
       (items, first)

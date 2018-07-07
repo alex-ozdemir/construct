@@ -24,7 +24,7 @@ object XPiler {
       case c: Construction =>
         cons += (c.name -> c)
         ()
-      case s: Shape        =>
+      case s: Shape =>
         shapes += s.con.name
         ()
     }
@@ -36,14 +36,17 @@ object XPiler {
         }
       if (builtins contains id) None
       else {
-        Some(cons.getOrElse(id, {
-          if (shapes contains id)
-            throw new XPilerError(
-              s"Identifier <${id.name}> is a shape, but can only XPile constructions.\nStatement: $s")
-          else
-            throw new XPilerError(
-              s"Unknown Identifier <${id.name}> in statement $s")
-        }))
+        Some(
+          cons.getOrElse(
+            id, {
+              if (shapes contains id)
+                throw new XPilerError(
+                  s"Identifier <${id.name}> is a shape, but can only XPile constructions.\nStatement: $s")
+              else
+                throw new XPilerError(
+                  s"Unknown Identifier <${id.name}> in statement $s")
+            }
+          ))
       }
     }
     val used_constructions = mutable.MutableList[Construction]()
@@ -54,7 +57,7 @@ object XPiler {
       con.statements foreach {
         case s @ Statement(_, FnApp(fn_id, params)) =>
           if (params forall {
-                case Exactly(id) => true
+                case Exactly(_) => true
                 case _           => false
               }) {
             lookupConstruction(fn_id, s) foreach { c =>
@@ -97,9 +100,10 @@ class ConstructionProcessor(c: Construction, asMacro: Boolean) {
   val points = mutable.HashMap[Identifier, String]()
   val circles = mutable.HashMap[Identifier, String]()
   val lines = mutable.HashMap[Identifier, String]()
-  def getPoint(id: Identifier): String = points.getOrElse(id, {
-    throw new Error("!")
-  })
+  def getPoint(id: Identifier): String =
+    points.getOrElse(id, {
+      throw new Error("!")
+    })
   require(params forall { case Parameter(_, ty) => ty == Identifier("point") })
   require(returns.length <= 2)
   var i = 1
@@ -202,7 +206,7 @@ class ConstructionProcessor(c: Construction, asMacro: Boolean) {
     env("tikzpicture") {
       (c.parameters zip pointsPos map {
         case (Parameter(name, _), (x, y)) =>
-          f"\\tkzDefPoint($x%.2f,$y%.2f){${name.name}}"
+          f"\\tkzDefPoint($x%d,$y%d){${name.name}}"
       } mkString "\n") + "\n" + emitBody +
         s"\n\\tkzDrawPoints(${points.values mkString ","})" +
         s"\n\\tkzLabelPoints(${points.values mkString ","})" +

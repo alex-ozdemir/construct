@@ -1,12 +1,11 @@
 package construct.output
 
 import construct.engine._
-import scala.collection.mutable.HashMap
 
 class Draw {
   case class Id(name: String)
-  var lastId = -1
-  val idPrefix = "tmp"
+  var lastId: Int = -1
+  val idPrefix: String = "tmp"
 
   def nextId(): String = {
     lastId += 1
@@ -35,17 +34,17 @@ class Draw {
   def draw(drawable: Drawable): String = {
     val name = drawable.name
     drawable.locus match {
-      case Circle(c, e)    => shapeFromPointPair(c, e, tkzCircle(_, _))
-      case Line(p1, p2)    => shapeFromPointPair(p1, p2, tkzLine(_, _))
-      case Segment(p1, p2) => shapeFromPointPair(p1, p2, tkzSegment(_, _))
-      case Ray(p1, p2)     => shapeFromPointPair(p1, p2, tkzRay(_, _))
+      case Circle(c, e)    => shapeFromPointPair(c, e, tkzCircle)
+      case Line(p1, p2)    => shapeFromPointPair(p1, p2, tkzLine)
+      case Segment(p1, p2) => shapeFromPointPair(p1, p2, tkzSegment)
+      case Ray(p1, p2)     => shapeFromPointPair(p1, p2, tkzRay)
       case Point(x, y)     => tkzPoint(name, x, y)
       case Union(loci)     => drawMultiple(loci map { Drawable(nextId(), _) })
     }
   }
 
   def drawMultiple(drawables: Iterable[Drawable]): String =
-    drawables map { draw(_) } mkString "\n"
+    drawables map { draw } mkString "\n"
 
   def draw(drawables: Iterable[Drawable]): String =
     header + env("document") { env("tikzpicture") { drawMultiple(drawables) } }
@@ -116,9 +115,9 @@ class Draw {
     \\tkzLabelPoints(${i mkString ","}) """
   }
 
-  val tkzInterLL = tkzInter("LL") _
-  val tkzInterLC = tkzInter("LC") _
-  val tkzInterCC = tkzInter("CC") _
+  val tkzInterLL: (String, String, String, String, List[String]) => String = tkzInter("LL")
+  val tkzInterLC: (String, String, String, String, List[String]) => String = tkzInter("LC")
+  val tkzInterCC: (String, String, String, String, List[String]) => String = tkzInter("CC")
 }
 
 object TkzEuclide {

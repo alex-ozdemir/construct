@@ -82,7 +82,7 @@ object ConstructParser extends JavaTokenParsers with PackratParsers {
 
   lazy val construction: PackratParser[Construction] =
     id ~ sep ~ givens ~ sep ~ statements ~ sep ~ returns ^^ {
-      case name ~ s1 ~ givens_ ~ s2 ~ states ~ s3 ~ returns_ =>
+      case name ~ _ ~ givens_ ~ _ ~ states ~ _ ~ returns_ =>
         Construction(name, givens_, states, returns_)
     }
 

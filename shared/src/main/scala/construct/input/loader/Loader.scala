@@ -15,5 +15,5 @@ trait Loader {
   /**
     * Initialize the loader, potentially returning base items
     */
-  def init(): (HashMap[Identifier, Item])
+  def init(): HashMap[Identifier, Item]
 }

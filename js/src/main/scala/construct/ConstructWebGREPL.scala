@@ -20,7 +20,7 @@ class ConstructWebGREPL(printer: js.Function1[String, Unit],
     extends GREPLFrontend {
 
   val loader: Loader = new WebLoader(reader)
-  val backend: GREPLBackend = new ConstructGREPL(this, loader)
+  val backend: GREPLBackend = new GREPLBackendImpl(this, loader)
   backend.helpMessage =
     """Metacommands:
   :h[elp]                     Print this message.

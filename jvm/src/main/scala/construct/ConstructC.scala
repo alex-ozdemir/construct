@@ -25,7 +25,7 @@ import construct.semantics.ConstructInterpreter
 import construct.output.{PNG, TkzEuclide, XPiler}
 
 object ConstructC extends App {
-  var interpreter = new ConstructInterpreter
+  val interpreter = new ConstructInterpreter
   val filename = if (args.length > 0) { args(0) } else {
     throw new Error("Must provide file to interpret")
   }

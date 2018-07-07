@@ -39,7 +39,7 @@ class CanvasDrawer(val canvas: Canvas, val shapes: List[Drawable], val suggestio
       setColorFill(c)
     }
 
-    def draw(): (Point => Point) = {
+    def draw(): Point => Point = {
       //ctx.clearRect(0, 0, canvas.width, canvas.height)
       setColorFill(Color.WHITE())
       ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -70,11 +70,10 @@ class CanvasDrawer(val canvas: Canvas, val shapes: List[Drawable], val suggestio
       case Line(p1, p2)    => drawLine(name, pointsToPixels(p1), pointsToPixels(p2), sc)
       case Ray(p1, p2)     => drawRay(name, pointsToPixels(p1), pointsToPixels(p2), sc)
       case Segment(p1, p2) => drawSegment(name, pointsToPixels(p1), pointsToPixels(p2), sc)
-      case Union(loci) => {
+      case Union(loci) =>
         val loci_list = loci.toList
         loci_list.headOption map { Drawable(name, _) } foreach { draw(_, sc) }
         loci_list.tail map { Drawable("", _) } foreach { draw(_, sc) }
-      }
     }
   }
 
@@ -143,8 +142,6 @@ class CanvasDrawer(val canvas: Canvas, val shapes: List[Drawable], val suggestio
   def drawLine(name: String, p1: Point, p2: Point, scheme: Scheme) = {
     val buf = 10
     val thick = 1.5f
-    val Point(x1, y1) = p1
-    val Point(x2, y2) = p2
     val List(Point(x3, y3), Point(x4, y4)) =
       (Line(p1, p2) intersect boundary).asPoints
     val Point(lx, ly) = Point(buf, buf) + (p1 + p2) / 2

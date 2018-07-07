@@ -12,7 +12,7 @@ class WebLoader(reader: js.Function0[String]) extends Loader {
   override def load(filename: String): (HashMap[Identifier, Item], Option[Construction]) =
     throw WebInclude(filename)
 
-  override def init(): (HashMap[Identifier, Item]) = {
+  override def init(): HashMap[Identifier, Item] = {
     ConstructParser(reader()) match {
       case ConstructParser.Success(p, _) =>
         if (p.references.nonEmpty) {

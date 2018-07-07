@@ -7,7 +7,13 @@ object IterTools {
       case h :: t => for (xh <- h; xt <- cartesianProduct(t)) yield xh :: xt
     }
 
-  def uniqueBy[A, B](list: Iterable[A], fn: Function1[A, B]): List[A] = {
+  /**
+    * Given a
+    * @param list of items and a
+    * @param fn from items to key values
+    * @return a list of the items such that no two have the same key, and the first value having each key is present.
+    */
+  def uniqueBy[A, B](list: Iterable[A], fn: A => B): List[A] = {
     val bs = scala.collection.mutable.MutableList[B]()
     val out = scala.collection.mutable.MutableList[A]()
     for (a <- list) {
