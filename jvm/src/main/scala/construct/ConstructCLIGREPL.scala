@@ -6,6 +6,7 @@ import java.io.{FileWriter, PrintWriter}
 import scala.tools.nsc.EvalLoop
 import scala.swing._
 import construct.engine.Point
+import construct.grepl._
 import construct.input.ast.Program
 import construct.input.loader.{FileSystemLoader, Loader}
 import construct.output.{Drawable, PNG, PrettyPrinter}
@@ -21,7 +22,7 @@ object ConstructCLIGREPL extends App with EvalLoop with GREPLFrontend {
   var grepl: GREPLBackend = _
 
   // Initialize UI
-  val ui = new UI(pixelsToPoints(_) foreach { grepl.processPointClick })
+  val ui = new UI(pixelsToPoints(_) foreach { p => grepl.processEvent(PointAdded(p))})
   ui.visible = true
 
   val loader: Loader = new FileSystemLoader
@@ -60,7 +61,7 @@ object ConstructCLIGREPL extends App with EvalLoop with GREPLFrontend {
 
   loop { line =>
     try {
-      grepl.processLine(line)
+      grepl.processEvent(LineEntered(line))
     } catch {
       case e: ConstructError => printToShell(e.fullMsg)
     }

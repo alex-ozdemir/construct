@@ -28,13 +28,14 @@
 //             // Last statement is reverted
 // ```
 
-package construct
+package construct.grepl
 
 import construct.input.ast._
 import construct.input.loader.Loader
 import construct.input.parser.ConstructParser
 import construct.output.Drawable
 import construct.semantics.ConstructError
+import construct.{ProgramStore, engine}
 
 class GREPLBackendImpl(val frontend: GREPLFrontend, val loader: Loader)
     extends GREPLBackend {
@@ -48,7 +49,7 @@ class GREPLBackendImpl(val frontend: GREPLFrontend, val loader: Loader)
   var nextLetter = 'A'
   var clearSuggestions = false
 
-  val helpMessage: String =
+  var helpMessage: String =
     """Metacommands:
   :h[elp]                           Print this message.
   :r[eset]                          Empty the canvas and reload base libraries
@@ -179,7 +180,7 @@ class GREPLBackendImpl(val frontend: GREPLFrontend, val loader: Loader)
     drawToUI()
   }
 
-  override def processPointClick(location: engine.Point): Unit = {
+  def processPointAdded(location: engine.Point): Unit = {
     var potentialIdent: Identifier = null
 
     do {
@@ -189,5 +190,12 @@ class GREPLBackendImpl(val frontend: GREPLFrontend, val loader: Loader)
 
     programStore.addPoint(potentialIdent, location)
     drawToUI()
+  }
+
+  override def processEvent(event: UserEvent): Unit = {
+    event match {
+      case PointAdded(pt) => processPointAdded(pt)
+      case LineEntered(line) => processLine(line)
+    }
   }
 }

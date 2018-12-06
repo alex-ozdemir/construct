@@ -1,4 +1,4 @@
-package construct
+package construct.grepl
 
 import construct.input.ast.Program
 import construct.output.Drawable

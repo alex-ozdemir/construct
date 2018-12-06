@@ -1,14 +1,13 @@
 package construct
 
 import construct.engine.Point
+import construct.grepl._
 import construct.input.ast.Program
 import construct.input.loader.{Loader, WebLoader}
 import construct.output.{CanvasDrawer, Drawable, PrettyPrinter}
 import construct.semantics.ConstructError
-import org.scalajs.dom
-import dom.document
+import org.scalajs.dom.document
 import org.scalajs.dom.html.Canvas
-import org.scalajs.dom.raw.HTMLTextAreaElement
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
@@ -43,7 +42,7 @@ class ConstructWebGREPL(printer: js.Function1[String, Unit],
   @JSExport("handleLine")
   def handleLine(line: String): Unit = {
     try {
-      backend.processLine(line)
+      backend.processEvent(LineEntered(line))
     } catch {
       case e: ConstructError => printToShell(e.fullMsg)
     }
@@ -51,7 +50,8 @@ class ConstructWebGREPL(printer: js.Function1[String, Unit],
 
   @JSExport("handleClick")
   def handleClick(x: Int, y: Int): Unit = {
-    backend.processPointClick(pixelsToPoints(Point(x, y)))
+    println(f"Click @ ($x, $y) @ ${pixelsToPoints(Point(x,y))}")
+    backend.processEvent(PointAdded(pixelsToPoints(Point(x, y))))
   }
 
   override def drawToScreen(shapes: List[Drawable],
