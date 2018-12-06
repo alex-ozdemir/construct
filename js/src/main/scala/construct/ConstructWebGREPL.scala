@@ -20,15 +20,6 @@ class ConstructWebGREPL(printer: js.Function1[String, Unit],
 
   val loader: Loader = new WebLoader(reader)
   val backend: GREPLBackend = new GREPLBackendImpl(this, loader)
-  backend.helpMessage =
-    """Metacommands:
-  :h[elp]                     Print this message.
-  :r[eset]                    Empty the canvas and reload base libraries
-  :u[ndo]                     Undo last action.
-  :?                          Print interpreter state (for developers)
-  :w[rite] <construction>     Name the session `construction` and write to library.
-  :s[uggest] [<construction>] Suggest how `construction` might be used,
-                                or clear suggestions."""
 
   var pixelsToPoints: Point => Point = { _ =>
     Point(0, 0)
@@ -50,7 +41,6 @@ class ConstructWebGREPL(printer: js.Function1[String, Unit],
 
   @JSExport("handleClick")
   def handleClick(x: Int, y: Int): Unit = {
-    println(f"Click @ ($x, $y) @ ${pixelsToPoints(Point(x,y))}")
     backend.processEvent(PointAdded(pixelsToPoints(Point(x, y))))
   }
 

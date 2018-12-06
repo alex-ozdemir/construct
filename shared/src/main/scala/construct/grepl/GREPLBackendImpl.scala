@@ -50,7 +50,11 @@ class GREPLBackendImpl(val frontend: GREPLFrontend, val loader: Loader)
   var clearSuggestions = false
 
   var helpMessage: String =
-    """Metacommands:
+    """
+Tutorial:
+  https://github.com/alex-ozdemir/construct/wiki/Introduction-to-Construct
+
+Metacommands:
   :h[elp]                           Print this message.
   :r[eset]                          Empty the canvas and reload base libraries
   :d[raw] [<file>]                  Draw canvas to `file`.
@@ -61,7 +65,16 @@ class GREPLBackendImpl(val frontend: GREPLFrontend, val loader: Loader)
   :w[rite] <construction> [<file>]  Name the session `construction` and write to `file`.
                                       If `file` is missing, writes to "out.con"
   :s[uggest] [<construction>]       Suggest how `construction` might be used,
-                                      or clear suggestions."""
+                                      or clear suggestions.
+Builtins:
+  let _ = _
+  circle(_,_)
+  line(_,_)
+  ray(_,_)
+  segment(_,_)
+  intersecion(_,_)
+  {_,_,_... }
+  _ - _ """
 
   def drawableSuggestions: List[List[Drawable]] = suggestions map {
     case (drawables, _, _) => drawables

@@ -26,8 +26,6 @@ class CanvasDrawer(val canvas: Canvas, val shapes: List[Drawable], val suggestio
     Segment(Point(0, canvas.height), Point(0, 0))
     ))
 
-    println(f"Bounding box $bounds, target box $targetBox")
-
     def setColorFill(c: Color): Unit = {
       ctx.fillStyle = s"rgb(${c.r},${c.g},${c.b})"
     }
